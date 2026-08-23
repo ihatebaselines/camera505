@@ -1,0 +1,60 @@
+{
+  "model_name": "CAMERA 505 ESRS CatBoost Classifier",
+  "dataset_rows": 10000,
+  "train_rows": 8000,
+  "test_rows": 2000,
+  "validation_accuracy": 0.9975,
+  "macro_f1_score": 0.9953,
+  "cohort_classes": [
+    "healthy_adult",
+    "insomnia_hyperarousal",
+    "obese_high_risk",
+    "pediatric_adolescent",
+    "senior_high_risk",
+    "snoring_mild",
+    "young_athlete"
+  ],
+  "feature_importances": [
+    {
+      "feature": "age",
+      "importance_pct": 48.37
+    },
+    {
+      "feature": "snore_frequency",
+      "importance_pct": 29.39
+    },
+    {
+      "feature": "bmi",
+      "importance_pct": 12.18
+    },
+    {
+      "feature": "daytime_fatigue",
+      "importance_pct": 6.7
+    },
+    {
+      "feature": "stop_bang_score",
+      "importance_pct": 1.97
+    },
+    {
+      "feature": "neck_circumference_cm",
+      "importance_pct": 1.0
+    },
+    {
+      "feature": "sleep_position_num",
+      "importance_pct": 0.27
+    },
+    {
+      "feature": "gender_num",
+      "importance_pct": 0.09
+    },
+    {
+      "feature": "has_smartwatch",
+      "importance_pct": 0.02
+    },
+    {
+      "feature": "choking_awakenings",
+      "importance_pct": 0.02
+    }
+  ],
+  "model_path": "C:\\Users\\cercu\\.gemini\\antigravity\\scratch\\camera 505 hackathon\\foundation_models\\catboost_esrs_classifier.cbm"
+}

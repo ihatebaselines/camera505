@@ -1,0 +1,289 @@
+{
+  "summary": {
+    "total_datasets": 14,
+    "total_subjects": 21531,
+    "total_hours": 206318.0,
+    "open_access": 12,
+    "with_apnea_labels": 9,
+    "with_audio": 1,
+    "wfdb_accessible": 11,
+    "total_open_hours": 149318.0,
+    "largest_dataset": "Icentia11k: Long-Term Wearable ECG"
+  },
+  "datasets": [
+    {
+      "dataset_id": "apnea_ecg",
+      "name": "Apnea-ECG Database",
+      "source": "PhysioNet",
+      "num_subjects": 70,
+      "total_hours": 9.3,
+      "modalities": [
+        "ECG"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": false,
+      "wfdb_slug": "apnea-ecg/1.0.0",
+      "access_url": "https://physionet.org/content/apnea-ecg/1.0.0/",
+      "access_type": "open",
+      "notes": "Classic ECG-only apnea dataset. Per-minute apnea/normal labels."
+    },
+    {
+      "dataset_id": "mitbih_poly",
+      "name": "MIT-BIH Polysomnographic Database",
+      "source": "PhysioNet",
+      "num_subjects": 18,
+      "total_hours": 2.4,
+      "modalities": [
+        "ECG",
+        "EEG",
+        "EOG",
+        "EMG",
+        "SpO2",
+        "Respiration"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": "slpdb/1.0.0",
+      "access_url": "https://physionet.org/content/slpdb/1.0.0/",
+      "access_type": "open",
+      "notes": "Multi-channel sleep recording with expert sleep stage annotations."
+    },
+    {
+      "dataset_id": "dreamt",
+      "name": "DREAMT: Wearable PSG Dataset (2026)",
+      "source": "PhysioNet",
+      "num_subjects": 100,
+      "total_hours": 800.0,
+      "modalities": [
+        "ECG",
+        "PPG",
+        "Actigraphy",
+        "PSG_reference"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": "dreamt/1.0.0",
+      "access_url": "https://physionet.org/content/dreamt/1.0.0/",
+      "access_type": "open",
+      "notes": "New 2026 dataset. Wearable + clinical PSG pairs. 100 apnea patients."
+    },
+    {
+      "dataset_id": "cap_sleep",
+      "name": "CAP Sleep Database",
+      "source": "PhysioNet",
+      "num_subjects": 108,
+      "total_hours": 450.0,
+      "modalities": [
+        "ECG",
+        "EEG",
+        "EMG",
+        "Respiration",
+        "SpO2"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": "capslpdb/1.0.0",
+      "access_url": "https://physionet.org/content/capslpdb/1.0.0/",
+      "access_type": "open",
+      "notes": "CAP (Cyclic Alternating Pattern) annotations. Large sleep staging dataset."
+    },
+    {
+      "dataset_id": "bidmc_ppg",
+      "name": "BIDMC PPG and Respiration",
+      "source": "PhysioNet",
+      "num_subjects": 53,
+      "total_hours": 7.1,
+      "modalities": [
+        "ECG",
+        "PPG",
+        "Respiration"
+      ],
+      "has_apnea_labels": false,
+      "has_snore_audio": false,
+      "has_sleep_stages": false,
+      "wfdb_slug": "bidmc/1.0.0",
+      "access_url": "https://physionet.org/content/bidmc/1.0.0/",
+      "access_type": "open",
+      "notes": "Reference waveform for ECG-derived respiration (EDR) validation."
+    },
+    {
+      "dataset_id": "fantasia",
+      "name": "Fantasia Database (Young vs Elderly HRV)",
+      "source": "PhysioNet",
+      "num_subjects": 40,
+      "total_hours": 20.0,
+      "modalities": [
+        "ECG",
+        "Respiration"
+      ],
+      "has_apnea_labels": false,
+      "has_snore_audio": false,
+      "has_sleep_stages": false,
+      "wfdb_slug": "fantasia/1.0.0",
+      "access_url": "https://physionet.org/content/fantasia/1.0.0/",
+      "access_type": "open",
+      "notes": "HRV aging study. 20 young + 20 elderly subjects."
+    },
+    {
+      "dataset_id": "psg_audio",
+      "name": "PSG-Audio (ScienceDB)",
+      "source": "ScienceDB",
+      "num_subjects": 212,
+      "total_hours": 1800.0,
+      "modalities": [
+        "ECG",
+        "EEG",
+        "EMG",
+        "Tracheal_Audio_16kHz",
+        "Ambient_Audio_16kHz"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": true,
+      "has_sleep_stages": true,
+      "wfdb_slug": null,
+      "access_url": "https://www.sciencedb.cn/en/detail?dataSetId=797746401676656640",
+      "access_type": "open",
+      "notes": "CRITICAL for LIFE: has synchronized ECG + audio. Apnea, snore, arousal labels. doi:10.11922/sciencedb.00345"
+    },
+    {
+      "dataset_id": "ucddb",
+      "name": "UCD Sleep Apnea Database",
+      "source": "PhysioNet",
+      "num_subjects": 25,
+      "total_hours": 200.0,
+      "modalities": [
+        "ECG",
+        "SpO2",
+        "Nasal_Airflow",
+        "Chest_Effort",
+        "EEG"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": "ucddb/1.0.0",
+      "access_url": "https://physionet.org/content/ucddb/1.0.0/",
+      "access_type": "open",
+      "notes": "Per-second apnea annotations with respiratory signals."
+    },
+    {
+      "dataset_id": "nstdb",
+      "name": "MIT-BIH Noise Stress Test",
+      "source": "PhysioNet",
+      "num_subjects": 12,
+      "total_hours": 5.0,
+      "modalities": [
+        "ECG",
+        "Motion_Artifact",
+        "BW_Noise"
+      ],
+      "has_apnea_labels": false,
+      "has_snore_audio": false,
+      "has_sleep_stages": false,
+      "wfdb_slug": "nstdb/1.0.0",
+      "access_url": "https://physionet.org/content/nstdb/1.0.0/",
+      "access_type": "open",
+      "notes": "ECG with motion artifact noise. Useful for training robust preprocessing."
+    },
+    {
+      "dataset_id": "challenge2018",
+      "name": "PhysioNet Challenge 2018: Sleep Classification",
+      "source": "PhysioNet",
+      "num_subjects": 1985,
+      "total_hours": 15000.0,
+      "modalities": [
+        "ECG",
+        "EEG",
+        "EMG",
+        "EOG",
+        "SpO2",
+        "Respiration"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": "challenge-2018/1.0.0",
+      "access_url": "https://physionet.org/content/challenge-2018/1.0.0/",
+      "access_type": "open",
+      "notes": "Almost 2000 PSG recordings. Key benchmark for automated sleep staging."
+    },
+    {
+      "dataset_id": "icentia11k",
+      "name": "Icentia11k: Long-Term Wearable ECG",
+      "source": "PhysioNet",
+      "num_subjects": 11000,
+      "total_hours": 131000.0,
+      "modalities": [
+        "ECG_single_lead"
+      ],
+      "has_apnea_labels": false,
+      "has_snore_audio": false,
+      "has_sleep_stages": false,
+      "wfdb_slug": "icentia11k/1.0",
+      "access_url": "https://physionet.org/content/icentia11k/1.0/",
+      "access_type": "open",
+      "notes": "LARGEST open ECG: 11,000 patients, 131,000+ hours. 14-day recordings. Arrhythmia labels."
+    },
+    {
+      "dataset_id": "mesa_sleep",
+      "name": "MESA Sleep Study (NSRR)",
+      "source": "NSRR",
+      "num_subjects": 2056,
+      "total_hours": 12000.0,
+      "modalities": [
+        "PSG",
+        "ECG",
+        "EEG",
+        "Actigraphy",
+        "Questionnaires"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": null,
+      "access_url": "https://sleepdata.org/datasets/mesa",
+      "access_type": "restricted_nsrr",
+      "notes": "Requires NSRR access agreement (free). 2000+ subjects. Large epidemiological study."
+    },
+    {
+      "dataset_id": "shhs",
+      "name": "Sleep Heart Health Study (SHHS)",
+      "source": "NSRR",
+      "num_subjects": 5804,
+      "total_hours": 45000.0,
+      "modalities": [
+        "PSG",
+        "ECG",
+        "Cardiovascular_Followup"
+      ],
+      "has_apnea_labels": true,
+      "has_snore_audio": false,
+      "has_sleep_stages": true,
+      "wfdb_slug": null,
+      "access_url": "https://sleepdata.org/datasets/shhs",
+      "access_type": "restricted_nsrr",
+      "notes": "LARGEST: 5804 subjects, 45,000 hours. Gold standard sleep apnea epidemiology dataset."
+    },
+    {
+      "dataset_id": "mitdb",
+      "name": "MIT-BIH Arrhythmia Database",
+      "source": "PhysioNet",
+      "num_subjects": 48,
+      "total_hours": 24.0,
+      "modalities": [
+        "ECG_dual_lead"
+      ],
+      "has_apnea_labels": false,
+      "has_snore_audio": false,
+      "has_sleep_stages": false,
+      "wfdb_slug": "mitdb/1.0.0",
+      "access_url": "https://physionet.org/content/mitdb/1.0.0/",
+      "access_type": "open",
+      "notes": "Classic arrhythmia benchmark. 19 beat classes annotated by cardiologists."
+    }
+  ]
+}

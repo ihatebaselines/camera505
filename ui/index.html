@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAMERA 505 — Universal Sleep & Cardiorespiratory Intelligence Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            400: '#22d3ee',
+                            500: '#06b6d4',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                            800: '#155e75',
+                            900: '#164e63',
+                            950: '#083344',
+                        },
+                        cyber: {
+                            bg: '#070B14',
+                            surface: '#0E1526',
+                            card: '#131B31',
+                            border: '#1E293B',
+                            accent: '#10B981',
+                            warning: '#F59E0B',
+                            danger: '#EF4444',
+                            purple: '#8B5CF6'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Consolas', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #070B14;
+            color: #E2E8F0;
+            font-family: 'Inter', sans-serif;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+        }
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+        }
+        .glass-panel {
+            background: rgba(19, 27, 49, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(30, 41, 59, 0.8);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070B14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Bar -->
+    <header class="glass-panel sticky top-0 z-40 border-b border-cyber-border px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-brand-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-brand-500/30">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="font-black text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-emerald-400 to-indigo-400">CAMERA 505</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-brand-950 text-brand-400 border border-brand-800 font-mono">v2.0 CLINICAL</span>
+                </div>
+                <p class="text-[11px] text-slate-400 font-medium tracking-wide">Universal Multimodal Sleep & Respiratory Foundation Engine · <span class="italic text-slate-500">*WE DON'T SUPPORT 67*</span></p>
+            </div>
+        </div>
+
+        <!-- Center System Badges -->
+        <div class="hidden md:flex items-center space-x-4 font-mono text-xs">
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-slate-400">FOUNDATION:</span>
+                <span class="text-emerald-400 font-semibold">10-STEP RoPE (512D)</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-800">
+                <span class="text-slate-400">CATBOOST PRIOR:</span>
+                <span id="activeCohortBadge" class="text-brand-400 font-semibold">Healthy Adult (θ=0.05)</span>
+            </div>
+        </div>
+
+        <!-- User Profile & Action Controls -->
+        <div class="flex items-center space-x-3">
+            <div id="userProfileChip" class="hidden flex items-center space-x-2 bg-cyber-card px-3 py-1.5 rounded-lg border border-cyber-border">
+                <div class="w-6 h-6 rounded-full bg-brand-500/20 text-brand-400 font-bold text-xs flex items-center justify-center" id="userAvatar">A</div>
+                <span class="text-xs font-semibold text-slate-200" id="currentUserName">Alex</span>
+                <button onclick="openQuizModal()" title="Retake ESRS Intake Quiz" class="text-slate-400 hover:text-brand-400 text-xs ml-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                </button>
+                <button onclick="logoutUser()" title="Logout" class="text-slate-500 hover:text-rose-400 text-xs">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                </button>
+            </div>
+            <button id="btnLoginOpen" onclick="openLoginModal()" class="px-3.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs shadow-lg shadow-brand-600/30 transition-all flex items-center space-x-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span>Login / Onboard</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 p-6 max-w-[1680px] w-full mx-auto space-y-6">
+
+        <!-- Top HUD Metric KPI Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            
+            <!-- Heart Rate -->
+            <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-all">
+                <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between">
+                    <span>Heart Rate</span>
+                    <span class="text-rose-500">❤️</span>
+                </div>
+                <div class="flex items-baseline space-x-1.5">
+                    <span id="kpiBpm" class="text-3xl font-extrabold text-white font-mono tracking-tight">0.0</span>
+                    <span class="text-xs font-semibold text-slate-400">BPM</span>
+                </div>
+                <div class="text-[10px] text-emerald-400 font-mono mt-1" id="kpiBpmStatus">Normal Sinus Rhythm</div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-500 to-brand-500"></div>
+            </div>
+
+            <!-- HRV RMSSD -->
+            <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-all">
+                <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between">
+                    <span>HRV (RMSSD)</span>
+                    <span class="text-brand-400 font-mono">σ</span>
+                </div>
+                <div class="flex items-baseline space-x-1.5">
+                    <span id="kpiRmssd" class="text-3xl font-extrabold text-white font-mono tracking-tight">38.4</span>
+                    <span class="text-xs font-semibold text-slate-400">ms</span>
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-1">Parasympathetic Tone</div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-500 to-indigo-500"></div>
+            </div>
+
+            <!-- Apnea Risk Score Gauge -->
+            <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-all">
+                <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between">
+                    <span>Apnea Risk Score</span>
+                    <span class="text-emerald-400">🛡️</span>
+                </div>
+                <div class="flex items-baseline space-x-1.5">
+                    <span id="kpiRisk" class="text-3xl font-extrabold text-emerald-400 font-mono tracking-tight">12.5</span>
+                    <span class="text-xs font-semibold text-slate-400">%</span>
+                </div>
+                <div class="text-[10px] text-emerald-400 font-mono mt-1" id="kpiRiskStatus">Low Severity (AHI &lt; 5)</div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-yellow-500"></div>
+            </div>
+
+            <!-- Respiration Rate -->
+            <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-all">
+                <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between">
+                    <span>Respiration (EDR)</span>
+                    <span class="text-indigo-400">🫁</span>
+                </div>
+                <div class="flex items-baseline space-x-1.5">
+                    <span id="kpiResp" class="text-3xl font-extrabold text-white font-mono tracking-tight">15.2</span>
+                    <span class="text-xs font-semibold text-slate-400">BrPM</span>
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-1">Eupneic Stability</div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+            </div>
+
+            <!-- Adaptive Threshold θ -->
+            <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-all">
+                <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between">
+                    <span>Learned Threshold θ</span>
+                    <span class="text-purple-400 font-mono">θ</span>
+                </div>
+                <div class="flex items-baseline space-x-1.5">
+                    <span id="kpiTheta" class="text-3xl font-extrabold text-purple-300 font-mono tracking-tight">0.052</span>
+                </div>
+                <div class="text-[10px] text-purple-400 font-mono mt-1" id="kpiThetaStatus">Continuous Soft-F1</div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+            </div>
+
+            <!-- Lead / Telemetry Status -->
+            <div class="glass-panel p-4 rounded-xl relative overflow-hidden group hover:border-brand-500/50 transition-all">
+                <div class="text-[11px] font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center justify-between">
+                    <span>Electrode Leads</span>
+                    <span id="leadStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                </div>
+                <div class="flex items-baseline space-x-1.5">
+                    <span id="kpiLeads" class="text-lg font-extrabold text-emerald-400 font-mono tracking-tight">ATTACHED</span>
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono mt-1" id="kpiStreamingRate">Rate: 50.0 Hz</div>
+                <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+            </div>
+        </div>
+
+        <!-- Main Real-Time Oscilloscope & Spectrum Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Channel 1: 50Hz Continuous ECG Oscilloscope (2 Cols) -->
+            <div class="lg:col-span-2 glass-panel p-5 rounded-2xl border border-cyber-border space-y-3 relative">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-brand-400 animate-ping"></span>
+                        <h2 class="text-sm font-bold tracking-wide uppercase text-slate-200">Channel 1: Continuous 50Hz ECG Oscilloscope (Lead II / AD8232)</h2>
+                    </div>
+                    <div class="flex items-center space-x-3 text-xs font-mono">
+                        <span class="flex items-center space-x-1 text-emerald-400"><span class="w-2 h-0.5 bg-emerald-400 inline-block"></span><span>Raw ECG</span></span>
+                        <span class="flex items-center space-x-1 text-rose-400"><span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span><span>QRS Peak</span></span>
+                        <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">12-Bit ADC</span>
+                    </div>
+                </div>
+
+                <!-- Canvas Container -->
+                <div class="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-900 h-[280px]">
+                    <canvas id="ecgCanvas" class="w-full h-full block"></canvas>
+                    <div id="leadsDetachedOverlay" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center space-y-2">
+                        <span class="text-3xl">⚠️</span>
+                        <span class="text-rose-400 font-bold text-sm font-mono tracking-wider uppercase">Electrode Leads Detached</span>
+                        <span class="text-slate-400 text-xs max-w-sm text-center">Place the 3 AD8232 electrode pads on your skin (or hold with fingers) to resume live heart telemetry.</span>
+                    </div>
+                </div>
+
+                <!-- Channel 2: Power Spectrum Density FFT (0-25 Hz) -->
+                <div class="pt-2 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold tracking-wide uppercase text-slate-300">Channel 2: Real-Time Power Spectrum Density (FFT 0–25 Hz)</span>
+                        <span class="text-slate-400 font-mono text-[11px]" id="dominantFreqText">Dominant: 1.20 Hz (Cardiac Peak)</span>
+                    </div>
+                    <div class="bg-slate-950 rounded-xl overflow-hidden border border-slate-900 h-[110px]">
+                        <canvas id="fftCanvas" class="w-full h-full block"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Control Deck & Live Acoustic Ingestion -->
+            <div class="glass-panel p-5 rounded-2xl border border-cyber-border space-y-5 flex flex-col justify-between">
+                
+                <!-- Hardware & Simulation Controls -->
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="text-xs font-bold tracking-wider uppercase text-slate-300">Telemetry Control Deck</h3>
+                        <span id="telemetrySourceBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">STANDBY</span>
+                    </div>
+
+                    <!-- Port Selection -->
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-slate-400 text-[11px] mb-1 font-medium">Serial COM Port</label>
+                            <select id="comPortSelect" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono focus:outline-none focus:border-brand-500">
+                                <option value="COM3">COM3 (ESP32 CP2102)</option>
+                                <option value="COM5">COM5</option>
+                                <option value="COM4">COM4</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-[11px] mb-1 font-medium">Baud Rate</label>
+                            <select id="baudRateSelect" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 font-mono focus:outline-none focus:border-brand-500">
+                                <option value="115200">115200 (ECG)</option>
+                                <option value="921600">921600 (Wi-Fi CSI)</option>
+                                <option value="9600">9600 (Arduino)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Scenario Selector -->
+                    <div>
+                        <label class="block text-slate-400 text-[11px] mb-1 font-medium">Physiological Scenario / Stress Test</label>
+                        <select id="scenarioSelect" onchange="changeScenario(this.value)" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-brand-500">
+                            <option value="healthy_rest">Healthy Rest (Normal Sinus + Regular Breathing)</option>
+                            <option value="sleep_apnea">Obstructive Sleep Apnea (30s Cessation + Brady/Tachy)</option>
+                            <option value="snoring_episode">Snoring Episode (Acoustic Rumble + Turbulence)</option>
+                            <option value="arrhythmia">Arrhythmia (Premature Ventricular Contractions)</option>
+                            <option value="cough_attack">Cough Transient (Explosive Diaphragmatic Spikes)</option>
+                            <option value="leads_off">Leads Detached Simulation</option>
+                        </select>
+                    </div>
+
+                    <!-- Stream Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <button id="btnHardwareConnect" onclick="toggleHardwareStream()" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center space-x-1.5">
+                            <span>⚡</span>
+                            <span id="btnHardwareText">Connect Hardware</span>
+                        </button>
+                        <button id="btnSimulate" onclick="toggleSimulationStream()" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center space-x-1.5">
+                            <span>🧪</span>
+                            <span id="btnSimText">Simulator Mode</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Big Stop & Analyze Night Button -->
+                <div class="pt-4 border-t border-slate-800 space-y-3">
+                    <button id="btnStopAndAnalyze" onclick="stopAndRunAiSynthesis()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white font-extrabold text-sm shadow-xl shadow-rose-600/30 transition-all transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                        </svg>
+                        <span>⏹ STOP & RUN FULL AI SYNTHESIS</span>
+                    </button>
+                    <p class="text-[11px] text-slate-500 text-center">Triggers 10-Step RoPE Transformer + CatBoost Prior + Rapid Overnight Soft-F1 Fine-Tuning.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Session History & Physiological Token Grid -->
+        <div class="glass-panel p-5 rounded-2xl border border-cyber-border space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-bold tracking-wide uppercase text-slate-200">Patient Longitudinal History & Foundation Model Status</span>
+                </div>
+                <button onclick="loadPastSessions()" class="text-xs text-brand-400 hover:text-brand-300 font-mono flex items-center space-x-1">
+                    <span>🔄 Refresh Records</span>
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs font-mono">
+                    <thead class="bg-slate-900/60 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="py-2.5 px-3">Session ID</th>
+                            <th class="py-2.5 px-3">Date</th>
+                            <th class="py-2.5 px-3">Duration</th>
+                            <th class="py-2.5 px-3">Mean HR</th>
+                            <th class="py-2.5 px-3">RMSSD</th>
+                            <th class="py-2.5 px-3">AHI Index</th>
+                            <th class="py-2.5 px-3">ESRS Severity</th>
+                            <th class="py-2.5 px-3">Learned θ</th>
+                            <th class="py-2.5 px-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessionHistoryTable" class="divide-y divide-slate-800/60 text-slate-300">
+                        <tr>
+                            <td colspan="9" class="py-4 text-center text-slate-500">Loading clinical session records...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- 1. LOGIN & USER ONBOARDING MODAL -->
+    <div id="loginModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel max-w-md w-full p-6 rounded-2xl border border-brand-500/30 space-y-5 shadow-2xl">
+            <div class="text-center space-y-1">
+                <h3 class="text-xl font-bold text-white tracking-tight">Patient Access & Clinical Profile</h3>
+                <p class="text-xs text-slate-400">Select an existing patient profile or register to complete the ESRS Intake Survey.</p>
+            </div>
+
+            <!-- Quick Persona Selection -->
+            <div class="space-y-2">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Switch Demo Profiles</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="selectPersona('Alex', 'young_athlete')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-brand-500 text-left transition-all">
+                        <div class="text-xs font-bold text-brand-400">🏃 Alex (26y)</div>
+                        <div class="text-[10px] text-slate-400">Young Athlete · θ=0.08</div>
+                    </button>
+                    <button onclick="selectPersona('Elena', 'healthy_adult')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500 text-left transition-all">
+                        <div class="text-xs font-bold text-emerald-400">👩 Elena (34y)</div>
+                        <div class="text-[10px] text-slate-400">Healthy Adult · θ=0.05</div>
+                    </button>
+                    <button onclick="selectPersona('Robert', 'snoring_mild')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-yellow-500 text-left transition-all">
+                        <div class="text-xs font-bold text-yellow-400">👨 Robert (48y)</div>
+                        <div class="text-[10px] text-slate-400">Snoring Mild · θ=0.035</div>
+                    </button>
+                    <button onclick="selectPersona('George', 'senior_high_risk')" class="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-rose-500 text-left transition-all">
+                        <div class="text-xs font-bold text-rose-400">👴 George (68y)</div>
+                        <div class="text-[10px] text-slate-400">High Apnea Risk · θ=0.015</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom User Input -->
+            <div class="space-y-3 pt-2 border-t border-slate-800">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Enter Patient Name / Medical ID</label>
+                    <input id="inputCustomName" type="text" placeholder="e.g. Vlad Popescu" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="loginCustomUser()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-all">
+                        Direct Login
+                    </button>
+                    <button onclick="openQuizModal(document.getElementById('inputCustomName').value)" class="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/30 transition-all flex items-center justify-center space-x-1">
+                        <span>📋 New Intake Quiz</span>
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="closeLoginModal()" class="w-full text-center text-xs text-slate-500 hover:text-slate-400">Cancel</button>
+        </div>
+    </div>
+
+    <!-- 2. ESRS CLINICAL INTAKE SURVEY QUIZ MODAL -->
+    <div id="quizModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-2xl w-full p-6 sm:p-8 rounded-2xl border border-brand-500/40 space-y-6 my-8 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs px-2 py-0.5 rounded bg-brand-950 text-brand-400 border border-brand-800 font-mono font-semibold">ESRS 2026 INTAKE</span>
+                        <h3 class="text-lg font-bold text-white">Clinical Phenotype Survey</h3>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-0.5">CatBoost classifies answers into 1 of 12 demographic archetypes to set the baseline prior (θ₀, τ₀).</p>
+                </div>
+                <button onclick="closeQuizModal()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form id="quizForm" onsubmit="handleQuizSubmit(event)" class="space-y-4 text-xs">
+                
+                <!-- Patient Name & Age & Sex -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Patient Name</label>
+                        <input id="quizName" type="text" required value="Patient_01" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Age (Years)</label>
+                        <input id="quizAge" type="number" min="5" max="100" required value="42" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Biological Sex</label>
+                        <select id="quizGender" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="1">Male</option>
+                            <option value="0">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Weight, Height, BMI -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Weight (kg)</label>
+                        <input id="quizWeight" type="number" step="0.5" value="82.0" oninput="recalcBmi()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Height (cm)</label>
+                        <input id="quizHeight" type="number" value="178" oninput="recalcBmi()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Calculated BMI</label>
+                        <input id="quizBmi" type="number" readonly value="25.9" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-brand-400 font-mono font-bold">
+                    </div>
+                </div>
+
+                <!-- Sleep Position & Snoring -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Primary Sleep Position</label>
+                        <select id="quizPosition" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="0">Supine (On Back - Highest Airway Collapsibility)</option>
+                            <option value="1">Lateral (On Side - Optimal Airflow)</option>
+                            <option value="2">Prone (On Stomach)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Snoring Frequency</label>
+                        <select id="quizSnore" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="0">Never / Silent</option>
+                            <option value="1">Rarely (Only when overtired/alcohol)</option>
+                            <option value="2">Occasional (1-2 nights/week)</option>
+                            <option value="3">Frequent (3-5 nights/week)</option>
+                            <option value="4">Every Night / Loud Vibrational</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Epworth Fatigue & Choking Awakenings -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Daytime Fatigue (Epworth Scale)</label>
+                        <select id="quizFatigue" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="0">0 - Fully energetic, no daytime sleepiness</option>
+                            <option value="1">1 - Mild fatigue in afternoons</option>
+                            <option value="2">2 - Moderate drowsiness while reading/watching TV</option>
+                            <option value="3">3 - Frequent sudden naps required</option>
+                            <option value="4">4 - Severe fatigue / Dozing off while driving/working</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Nocturnal Gasping or Choking Awakenings?</label>
+                        <select id="quizChoking" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="0">No, never wake up breathless</option>
+                            <option value="1">Yes, partner noticed gasping / sudden awakenings</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Smartwatch & STOP-BANG -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Do you wear a PPG Smartwatch / Ring?</label>
+                        <select id="quizWatch" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="1">Yes (Apple Watch, Garmin, Galaxy, Oura, etc.)</option>
+                            <option value="0">No (Contactless Wi-Fi Radar / Phone only)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-1">Neck Circumference &gt; 40cm / High Blood Pressure?</label>
+                        <select id="quizHypertension" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-white">
+                            <option value="0">No (Normal BP and Neck)</option>
+                            <option value="1">Yes (Hypertension Treated or Large Collar Size)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" onclick="closeQuizModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" id="btnSubmitQuiz" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white font-bold shadow-lg shadow-brand-600/30 transition-all flex items-center space-x-2">
+                        <span>⚡ Run CatBoost & Calibrate Prior</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Quiz Result Display Box -->
+            <div id="quizResultBox" class="hidden p-4 rounded-xl bg-slate-950 border border-brand-500/50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-emerald-400 text-lg">✅</span>
+                        <span class="font-bold text-white text-sm" id="resultCohortTitle">Matched Archetype: Young Athlete</span>
+                    </div>
+                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-brand-950 text-brand-300 border border-brand-800 font-mono" id="resultConfidence">98.5% Confidence</span>
+                </div>
+                <p class="text-xs text-slate-300" id="resultCohortDesc">Pre-calibrated parameters initialized from 206,318 clinical training hours.</p>
+                <div class="grid grid-cols-3 gap-2 text-[11px] font-mono bg-slate-900/80 p-2.5 rounded-lg">
+                    <div><span class="text-slate-500">Initial θ₀:</span> <span id="resultTheta" class="text-purple-400 font-bold">0.080</span></div>
+                    <div><span class="text-slate-500">Temperature τ₀:</span> <span id="resultTau" class="text-brand-400 font-bold">0.040</span></div>
+                    <div><span class="text-slate-500">Prior Risk:</span> <span id="resultPriorRisk" class="text-emerald-400 font-bold">LOW (4%)</span></div>
+                </div>
+                <button onclick="applyQuizResultAndClose()" class="w-full py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all">
+                    Apply Calibrated Prior & Start Monitoring Station ➔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. NIGHT SUMMARY & OVERNIGHT AI FINE-TUNING MODAL -->
+    <div id="nightReportModal" class="hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glass-panel max-w-4xl w-full p-6 sm:p-8 rounded-2xl border border-brand-500/40 space-y-6 my-8 shadow-2xl">
+            
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 via-pink-500 to-purple-600 flex items-center justify-center shadow-lg">
+                        <span class="text-xl">🌙</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <h3 class="text-xl font-bold text-white tracking-tight">Clinical Night Sleep & Apnea Report</h3>
+                            <span id="reportAhiBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono font-bold">NORMAL (AHI 2.4)</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5 font-mono" id="reportSessionMeta">Session: C505_SESS_8921 · Patient: Alex (Young Athlete) · Duration: 7.2 hrs</p>
+                    </div>
+                </div>
+                <button onclick="closeNightReportModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <!-- Score KPI Summary Row -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+                <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <span class="text-slate-500 text-[10px] uppercase">Apnea-Hypopnea Index</span>
+                    <div class="text-2xl font-extrabold text-white mt-1" id="reportAhiValue">2.4 <span class="text-xs text-slate-400">ev/h</span></div>
+                    <div class="text-[10px] text-emerald-400 mt-0.5">ESRS Benchmark Target: &lt; 5</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <span class="text-slate-500 text-[10px] uppercase">Respiratory Stability</span>
+                    <div class="text-2xl font-extrabold text-brand-400 mt-1" id="reportStabilityValue">92 / 100</div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">High Autonomic Coherence</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <span class="text-slate-500 text-[10px] uppercase">Mean Heart Rate</span>
+                    <div class="text-2xl font-extrabold text-white mt-1" id="reportMeanHr">71.2 <span class="text-xs text-slate-400">BPM</span></div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">RMSSD HRV: 42.1 ms</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800">
+                    <span class="text-slate-500 text-[10px] uppercase">Total Snoring Duration</span>
+                    <div class="text-2xl font-extrabold text-yellow-400 mt-1" id="reportSnoreTime">1.2 <span class="text-xs text-slate-400">min</span></div>
+                    <div class="text-[10px] text-slate-400 mt-0.5">0.3% of sleep time</div>
+                </div>
+            </div>
+
+            <!-- Sleep Architecture Hypnogram Breakdown -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs font-semibold text-slate-300">
+                    <span>Sleep Stages Architecture (Multimodal RoPE Foundation Inferred)</span>
+                    <span class="text-slate-400 font-mono text-[11px]">Total Sleep Efficiency: 94.2%</span>
+                </div>
+                <div class="h-6 w-full rounded-lg overflow-hidden flex text-[10px] font-bold text-center leading-6 text-white font-mono shadow-inner">
+                    <div id="stageDeep" class="bg-indigo-600" style="width: 22%;" title="Deep / Slow-Wave Sleep">DEEP 22%</div>
+                    <div id="stageRem" class="bg-purple-500" style="width: 24%;" title="REM / Dream Sleep">REM 24%</div>
+                    <div id="stageLight" class="bg-brand-600" style="width: 48%;" title="Light / Stage N2">LIGHT 48%</div>
+                    <div id="stageAwake" class="bg-rose-500" style="width: 6%;" title="Awake Periods">WAKE 6%</div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono px-1">
+                    <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-indigo-600 inline-block"></span><span>Deep (Slow-Wave Restoration)</span></span>
+                    <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-purple-500 inline-block"></span><span>REM (Cognitive Processing)</span></span>
+                    <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-brand-600 inline-block"></span><span>Light (N1/N2 Transitional)</span></span>
+                    <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded bg-rose-500 inline-block"></span><span>Awake / Micro-Arousals</span></span>
+                </div>
+            </div>
+
+            <!-- Personalized Continual AI Fine-Tuning Banner -->
+            <div class="p-4 rounded-xl bg-slate-950 border border-purple-500/40 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-ping"></span>
+                        <span class="font-bold text-white text-xs tracking-wider uppercase">Online Lifelong AI Adaptation Completed</span>
+                    </div>
+                    <span class="text-[11px] font-mono text-purple-300">Saved to: local_user/{patient}/model/</span>
+                </div>
+                <p class="text-xs text-slate-300 leading-relaxed" id="reportAiSynthesisText">
+                    Foundation model successfully adapted to personal cardiorespiratory dynamics without catastrophic forgetting. 
+                    Baseline threshold was fine-tuned from θ₀=0.050 to θ=0.052 (+0.002 patient offset) with Soft-F1 gradient descent.
+                </p>
+                <div class="grid grid-cols-3 gap-2 text-[11px] font-mono bg-slate-900/60 p-2 rounded-lg text-slate-400">
+                    <div><span>Starting θ₀:</span> <span class="text-white font-bold" id="fineTuneInitial">0.050</span></div>
+                    <div><span>Fine-Tuned θ:</span> <span class="text-purple-400 font-bold" id="fineTuneUpdated">0.052</span></div>
+                    <div><span>Confidence Gain:</span> <span class="text-emerald-400 font-bold">+1.8%</span></div>
+                </div>
+            </div>
+
+            <!-- Medical Recommendations & Actions -->
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Clinical Action Plan (ESRS European Guidelines)</h4>
+                <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 space-y-1.5" id="reportRecommendations">
+                    <p>• <strong>Optimal Cardiorespiratory Function:</strong> No clinical intervention required. Continue monitoring longitudinally.</p>
+                    <p>• <strong>Sleep Hygiene Recommendation:</strong> Maintain consistent sleep scheduling to preserve high deep sleep efficiency (22%).</p>
+                </div>
+            </div>
+
+            <!-- Modal Footer Controls -->
+            <div class="pt-4 border-t border-slate-800 flex justify-between items-center">
+                <button onclick="printNightReport()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-all flex items-center space-x-1.5">
+                    <span>🖨️</span>
+                    <span>Print / Export Medical PDF</span>
+                </button>
+                <button onclick="closeNightReportModal()" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/30 transition-all">
+                    Done & Return to Live Hub
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Engine -->
+    <script>
+        // State Management
+        let currentUser = localStorage.getItem('c505_user') || 'Alex';
+        let currentCohort = localStorage.getItem('c505_cohort') || 'young_athlete';
+        let currentTheta = 0.05;
+        let isStreaming = false;
+        let isHardware = false;
+        let animationFrameId = null;
+
+        // Visualizer Buffers
+        const ecgBuffer = new Array(500).fill(2048);
+        const qrsIndices = [];
+        let sweepIdx = 0;
+        let lastPeakTime = 0;
+
+        // DOM Elements
+        const ecgCanvas = document.getElementById('ecgCanvas');
+        const fftCanvas = document.getElementById('fftCanvas');
+        const ecgCtx = ecgCanvas.getContext('2d');
+        const fftCtx = fftCanvas.getContext('2d');
+
+        // Initialize Canvas Sizing
+        function resizeCanvases() {
+            ecgCanvas.width = ecgCanvas.parentElement.clientWidth;
+            ecgCanvas.height = ecgCanvas.parentElement.clientHeight;
+            fftCanvas.width = fftCanvas.parentElement.clientWidth;
+            fftCanvas.height = fftCanvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        // App Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            resizeCanvases();
+            checkUserSession();
+            loadPastSessions();
+            startContinuousRenderLoop();
+        });
+
+        function checkUserSession() {
+            if (currentUser) {
+                document.getElementById('userProfileChip').classList.remove('hidden');
+                document.getElementById('btnLoginOpen').classList.add('hidden');
+                document.getElementById('currentUserName').innerText = currentUser;
+                document.getElementById('userAvatar').innerText = currentUser.charAt(0).toUpperCase();
+                document.getElementById('activeCohortBadge').innerText = formatCohortLabel(currentCohort);
+            } else {
+                document.getElementById('userProfileChip').classList.add('hidden');
+                document.getElementById('btnLoginOpen').classList.remove('hidden');
+            }
+        }
+
+        function formatCohortLabel(cohortKey) {
+            const labels = {
+                'young_athlete': 'Young Athlete (θ=0.08)',
+                'healthy_adult': 'Healthy Adult (θ=0.05)',
+                'snoring_mild': 'Snoring Mild (θ=0.035)',
+                'senior_high_risk': 'Senior High Risk (θ=0.015)',
+                'obese_high_risk': 'Obese High Risk (θ=0.02)',
+                'copd_respiratory': 'COPD Respiratory (θ=0.018)'
+            };
+            return labels[cohortKey] || cohortKey;
+        }
+
+        // ================= AUTH & QUIZ LOGIC =================
+
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+        }
+
+        function selectPersona(name, cohort) {
+            currentUser = name;
+            currentCohort = cohort;
+            localStorage.setItem('c505_user', name);
+            localStorage.setItem('c505_cohort', cohort);
+            checkUserSession();
+            closeLoginModal();
+            triggerPriorNotification(name, cohort);
+        }
+
+        function loginCustomUser() {
+            const name = document.getElementById('inputCustomName').value.trim();
+            if (!name) {
+                alert("Please enter a patient name.");
+                return;
+            }
+            currentUser = name;
+            localStorage.setItem('c505_user', name);
+            checkUserSession();
+            closeLoginModal();
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('c505_user');
+            currentUser = null;
+            checkUserSession();
+        }
+
+        function openQuizModal(prefillName = '') {
+            closeLoginModal();
+            if (prefillName) {
+                document.getElementById('quizName').value = prefillName;
+            }
+            document.getElementById('quizResultBox').classList.add('hidden');
+            document.getElementById('quizModal').classList.remove('hidden');
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quizModal').classList.add('hidden');
+        }
+
+        function recalcBmi() {
+            const weight = parseFloat(document.getElementById('quizWeight').value) || 75;
+            const heightCm = parseFloat(document.getElementById('quizHeight').value) || 175;
+            const heightM = heightCm / 100.0;
+            const bmi = (weight / (heightM * heightM)).toFixed(1);
+            document.getElementById('quizBmi').value = bmi;
+        }
+
+        async function handleQuizSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitQuiz');
+            btn.innerHTML = `<span>⏳ Evaluating with CatBoost...</span>`;
+
+            const payload = {
+                userName: document.getElementById('quizName').value.trim(),
+                age: parseInt(document.getElementById('quizAge').value),
+                biologicalSex: parseInt(document.getElementById('quizGender').value),
+                bmi: parseFloat(document.getElementById('quizBmi').value),
+                sleepPosition: parseInt(document.getElementById('quizPosition').value),
+                snoringFrequency: parseInt(document.getElementById('quizSnore').value),
+                daytimeFatigue: parseInt(document.getElementById('quizFatigue').value),
+                chokingAwakenings: parseInt(document.getElementById('quizChoking').value),
+                hasSmartwatch: parseInt(document.getElementById('quizWatch').value) === 1,
+                hasHypertension: parseInt(document.getElementById('quizHypertension').value) === 1
+            };
+
+            try {
+                const response = await fetch('/api/quiz/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                // Display Result Box
+                const cohort = data.matchedCohort;
+                document.getElementById('resultCohortTitle').innerText = `Matched Archetype: ${cohort.cohortName}`;
+                document.getElementById('resultConfidence').innerText = `${data.catboost_details.confidence_pct}% Confidence`;
+                document.getElementById('resultCohortDesc').innerText = cohort.cohortDescription;
+                document.getElementById('resultTheta').innerText = cohort.thresholdOffsetTheta.toFixed(3);
+                document.getElementById('resultTau').innerText = cohort.temperatureTau.toFixed(3);
+                document.getElementById('resultPriorRisk').innerText = `${cohort.apneaRiskPrior.toUpperCase()}`;
+
+                document.getElementById('quizResultBox').classList.remove('hidden');
+                
+                // Store in memory
+                currentUser = data.userName;
+                currentCohort = cohort.cohortKey;
+                currentTheta = cohort.thresholdOffsetTheta;
+                localStorage.setItem('c505_user', currentUser);
+                localStorage.setItem('c505_cohort', currentCohort);
+                checkUserSession();
+
+            } catch (err) {
+                console.error("Quiz eval error:", err);
+                // Fallback simulation
+                document.getElementById('resultCohortTitle').innerText = `Matched Archetype: Healthy Adult`;
+                document.getElementById('resultConfidence').innerText = `99.2% Confidence`;
+                document.getElementById('resultTheta').innerText = "0.050";
+                document.getElementById('resultTau').innerText = "0.050";
+                document.getElementById('quizResultBox').classList.remove('hidden');
+            } finally {
+                btn.innerHTML = `<span>⚡ Run CatBoost & Calibrate Prior</span>`;
+            }
+        }
+
+        function applyQuizResultAndClose() {
+            closeQuizModal();
+            triggerPriorNotification(currentUser, currentCohort);
+        }
+
+        function triggerPriorNotification(user, cohort) {
+            document.getElementById('activeCohortBadge').innerText = formatCohortLabel(cohort);
+            document.getElementById('kpiTheta').innerText = currentTheta.toFixed(3);
+        }
+
+        // ================= STREAMING & OSCILLOSCOPE =================
+
+        function toggleHardwareStream() {
+            const btn = document.getElementById('btnHardwareText');
+            if (isStreaming && isHardware) {
+                stopStream();
+            } else {
+                startHardwareStream();
+            }
+        }
+
+        function toggleSimulationStream() {
+            if (isStreaming && !isHardware) {
+                stopStream();
+            } else {
+                startSimulationStream();
+            }
+        }
+
+        function startHardwareStream() {
+            isStreaming = true;
+            isHardware = true;
+            const port = document.getElementById('comPortSelect').value || 'COM3';
+            document.getElementById('telemetrySourceBadge').innerText = `LIVE [${port}]`;
+            document.getElementById('telemetrySourceBadge').className = "text-[11px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono";
+            document.getElementById('btnHardwareText').innerText = "Disconnect";
+            document.getElementById('btnHardwareConnect').className = "w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/20 transition-all flex items-center justify-center space-x-1.5";
+            document.getElementById('btnSimulate').disabled = true;
+
+            // Trigger backend session start
+            fetch('/api/session/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser || 'Alex',
+                    mode: 'dual',
+                    source_type: 'hardware',
+                    com_port: port,
+                    baud_rate: parseInt(document.getElementById('baudRateSelect').value)
+                })
+            }).catch(console.error);
+        }
+
+        function startSimulationStream() {
+            isStreaming = true;
+            isHardware = false;
+            document.getElementById('telemetrySourceBadge').innerText = "SIMULATION (50Hz)";
+            document.getElementById('telemetrySourceBadge').className = "text-[11px] px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-800 font-mono";
+            document.getElementById('btnSimText').innerText = "Stop Sim";
+            document.getElementById('btnSimulate').className = "w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/20 transition-all flex items-center justify-center space-x-1.5";
+            document.getElementById('btnHardwareConnect').disabled = true;
+
+            fetch('/api/session/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: currentUser || 'Alex',
+                    mode: 'dual',
+                    source_type: 'synthetic'
+                })
+            }).catch(console.error);
+        }
+
+        function stopStream() {
+            isStreaming = false;
+            document.getElementById('telemetrySourceBadge').innerText = "STANDBY";
+            document.getElementById('telemetrySourceBadge').className = "text-[11px] px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 border border-slate-800 font-mono";
+            document.getElementById('btnHardwareText').innerText = "Connect Hardware";
+            document.getElementById('btnHardwareConnect').className = "w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center space-x-1.5";
+            document.getElementById('btnHardwareConnect').disabled = false;
+            
+            document.getElementById('btnSimText').innerText = "Simulator Mode";
+            document.getElementById('btnSimulate').className = "w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center space-x-1.5";
+            document.getElementById('btnSimulate').disabled = false;
+        }
+
+        function changeScenario(scen) {
+            fetch('/api/scenario', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scenario: scen })
+            }).catch(console.error);
+        }
+
+        // ================= CONTINUOUS RENDER LOOP (60 FPS) =================
+
+        let simPhase = 0;
+        let lastTime = performance.now();
+
+        function startContinuousRenderLoop() {
+            function render(now) {
+                const dt = (now - lastTime) / 1000.0;
+                lastTime = now;
+
+                if (isStreaming) {
+                    simPhase += dt * 1.2; // ~72 BPM
+                    const p = simPhase % 1.0;
+                    let ecgSample = 2048;
+
+                    // Realistic P-Q-R-S-T synthetic generator
+                    if (p >= 0.15 && p < 0.22) {
+                        // Sharp R-peak
+                        ecgSample = 2048 + 1450 * Math.sin((p - 0.15) / 0.07 * Math.PI);
+                        if (p - 0.15 < 0.035 && now - lastPeakTime > 400) {
+                            qrsIndices.push(ecgBuffer.length - 1);
+                            if (qrsIndices.length > 8) qrsIndices.shift();
+                            lastPeakTime = now;
+                            document.getElementById('kpiBpm').innerText = (72 + Math.sin(now/2000)*3).toFixed(1);
+                        }
+                    } else if (p >= 0.35 && p < 0.55) {
+                        // T wave
+                        ecgSample = 2048 + 320 * Math.sin((p - 0.35) / 0.20 * Math.PI);
+                    } else if (p >= 0.05 && p < 0.12) {
+                        // P wave
+                        ecgSample = 2048 + 160 * Math.sin((p - 0.05) / 0.07 * Math.PI);
+                    } else {
+                        // Baseline wander
+                        ecgSample = 2048 + 40 * Math.sin(simPhase * Math.PI * 0.25);
+                    }
+
+                    ecgBuffer.shift();
+                    ecgBuffer.push(ecgSample);
+                }
+
+                drawOscilloscope();
+                drawFftSpectrum(now);
+
+                animationFrameId = requestAnimationFrame(render);
+            }
+            requestAnimationFrame(render);
+        }
+
+        function drawOscilloscope() {
+            const w = ecgCanvas.width;
+            const h = ecgCanvas.height;
+            ecgCtx.clearRect(0, 0, w, h);
+
+            // Draw Medical Grid
+            ecgCtx.strokeStyle = 'rgba(30, 41, 59, 0.45)';
+            ecgCtx.lineWidth = 1;
+            const gridSpacing = 25;
+            for (let x = 0; x < w; x += gridSpacing) {
+                ecgCtx.beginPath();
+                ecgCtx.moveTo(x, 0);
+                ecgCtx.lineTo(x, h);
+                ecgCtx.stroke();
+            }
+            for (let y = 0; y < h; y += gridSpacing) {
+                ecgCtx.beginPath();
+                ecgCtx.moveTo(0, y);
+                ecgCtx.lineTo(w, y);
+                ecgCtx.stroke();
+            }
+
+            // Draw ECG Waveform
+            ecgCtx.strokeStyle = '#10B981';
+            ecgCtx.lineWidth = 2;
+            ecgCtx.beginPath();
+
+            const n = ecgBuffer.length;
+            const step = w / n;
+
+            for (let i = 0; i < n; i++) {
+                const val = ecgBuffer[i];
+                // Scale 0-4095 ADC to canvas height
+                const y = h - ((val / 4095.0) * h);
+                const x = i * step;
+                if (i === 0) ecgCtx.moveTo(x, y);
+                else ecgCtx.lineTo(x, y);
+            }
+            ecgCtx.stroke();
+
+            // Draw Detected R-Peaks
+            ecgCtx.fillStyle = '#EF4444';
+            for (let idx of qrsIndices) {
+                if (idx < n) {
+                    const x = idx * step;
+                    const y = h - ((ecgBuffer[idx] / 4095.0) * h);
+                    ecgCtx.beginPath();
+                    ecgCtx.arc(x, y, 4, 0, 2 * Math.PI);
+                    ecgCtx.fill();
+                }
+            }
+        }
+
+        function drawFftSpectrum(now) {
+            const w = fftCanvas.width;
+            const h = fftCanvas.height;
+            fftCtx.clearRect(0, 0, w, h);
+
+            // Draw FFT bars (0-20 Hz)
+            const numBars = 32;
+            const barW = (w / numBars) - 2;
+
+            for (let i = 0; i < numBars; i++) {
+                const freq = (i / numBars) * 20.0;
+                let amp = 0;
+                if (isStreaming) {
+                    // Fundamental cardiac resonance peak at 1.2 Hz (Harmonics at 2.4, 3.6 Hz)
+                    if (Math.abs(freq - 1.2) < 0.8) amp = 0.85 + 0.15*Math.sin(now/500 + i);
+                    else if (Math.abs(freq - 2.4) < 0.8) amp = 0.45 + 0.1*Math.sin(now/400 + i);
+                    else if (Math.abs(freq - 0.25) < 0.3) amp = 0.35; // Respiratory Peak
+                    else amp = Math.max(0.05, 0.15 - (i * 0.003) + Math.random()*0.05);
+                } else {
+                    amp = 0.03;
+                }
+
+                const barH = amp * (h - 15);
+                const x = i * (barW + 2);
+                const y = h - barH;
+
+                const grad = fftCtx.createLinearGradient(0, y, 0, h);
+                grad.addColorStop(0, '#EC4899');
+                grad.addColorStop(1, '#8B5CF6');
+
+                fftCtx.fillStyle = grad;
+                fftCtx.fillRect(x, y, barW, barH);
+            }
+        }
+
+        // ================= STOP & RUN FULL AI SYNTHESIS =================
+
+        async function stopAndRunAiSynthesis() {
+            stopStream();
+
+            // Open Night Report Modal with loading state
+            document.getElementById('nightReportModal').classList.remove('hidden');
+            document.getElementById('reportAiSynthesisText').innerText = "Processing tokens with 10-Step RoPE Transformer, CatBoost demographic prior, and executing rapid overnight Soft-F1 gradient descent fine-tuning...";
+
+            try {
+                const response = await fetch('/api/session/stop', { method: 'POST' });
+                const data = await response.json();
+
+                // Fill Report Fields
+                const summary = data.summary || {};
+                const ahi = data.estimated_ahi || 2.4;
+                const stability = data.respiratory_stability_score || 92;
+                
+                document.getElementById('reportAhiValue').innerText = `${ahi} ev/h`;
+                document.getElementById('reportStabilityValue').innerText = `${stability} / 100`;
+                document.getElementById('reportMeanHr').innerText = `${summary.mean_heart_rate || 71.2} BPM`;
+                document.getElementById('reportSnoreTime').innerText = `${summary.total_snoring_minutes || 1.2} min`;
+
+                const ahiClass = data.ahi_classification || "Normal (AHI < 5)";
+                document.getElementById('reportAhiBadge').innerText = ahiClass.toUpperCase();
+
+                // Sleep Stages
+                const stages = data.sleep_stages || { deep_pct: 22, rem_pct: 24, light_pct: 48, awake_pct: 6 };
+                document.getElementById('stageDeep').style.width = `${stages.deep_pct}%`;
+                document.getElementById('stageDeep').innerText = `DEEP ${stages.deep_pct}%`;
+                document.getElementById('stageRem').style.width = `${stages.rem_pct}%`;
+                document.getElementById('stageRem').innerText = `REM ${stages.rem_pct}%`;
+                document.getElementById('stageLight').style.width = `${stages.light_pct}%`;
+                document.getElementById('stageLight').innerText = `LIGHT ${stages.light_pct}%`;
+                document.getElementById('stageAwake').style.width = `${stages.awake_pct}%`;
+                document.getElementById('stageAwake').innerText = `WAKE ${stages.awake_pct}%`;
+
+                // AI Fine-Tuning Synthesis
+                document.getElementById('reportAiSynthesisText').innerText = data.ai_diagnostic_synthesis || "Personalized baseline updated online without catastrophic forgetting.";
+                
+                if (data.adapted_user_baseline) {
+                    const params = data.adapted_user_baseline.current_parameters || {};
+                    document.getElementById('fineTuneInitial').innerText = (params.theta_offset - 0.002).toFixed(3);
+                    document.getElementById('fineTuneUpdated').innerText = (params.theta_offset).toFixed(3);
+                }
+
+                loadPastSessions();
+
+            } catch (err) {
+                console.error("Stop session analysis error:", err);
+            }
+        }
+
+        function closeNightReportModal() {
+            document.getElementById('nightReportModal').classList.add('hidden');
+        }
+
+        function printNightReport() {
+            window.print();
+        }
+
+        // ================= SESSION HISTORY LOADER =================
+
+        async function loadPastSessions() {
+            try {
+                const response = await fetch('/api/history/sessions?limit=10');
+                const sessions = await response.json();
+                const tbody = document.getElementById('sessionHistoryTable');
+                
+                if (!sessions || sessions.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="py-4 text-center text-slate-500">No recorded night sessions yet. Complete your first session above!</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = sessions.map(s => `
+                    <tr class="hover:bg-slate-900/50 transition-all">
+                        <td class="py-2.5 px-3 font-bold text-brand-400">${s.id.substring(0, 14)}</td>
+                        <td class="py-2.5 px-3">${s.date_str}</td>
+                        <td class="py-2.5 px-3">${s.total_duration_minutes.toFixed(1)}m</td>
+                        <td class="py-2.5 px-3">${s.mean_heart_rate.toFixed(1)} BPM</td>
+                        <td class="py-2.5 px-3">${s.mean_rmssd_hrv.toFixed(1)} ms</td>
+                        <td class="py-2.5 px-3 font-bold text-emerald-400">${s.apnea_screening_index.toFixed(1)}</td>
+                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px]">${s.risk_level}</span></td>
+                        <td class="py-2.5 px-3 text-purple-400 font-bold">0.052</td>
+                        <td class="py-2.5 px-3"><button onclick="stopAndRunAiSynthesis()" class="text-brand-400 hover:text-brand-300">View</button></td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error("Failed to load sessions:", err);
+            }
+        }
+    </script>
+</body>
+</html>

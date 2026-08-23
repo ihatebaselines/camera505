@@ -1,0 +1,38 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Runtime DB - GENERATED on startup via scripts/init_db.py
+# Never commit the 400MB+ SQLite file (GitHub limit 100MB)
+data/life_signals.db
+data/life_signals.db-shm
+data/life_signals.db-wal
+*.db-shm
+*.db-wal
+# keep small baselines, but ignore large runtime artifacts
+
+# NOTE: local_user/, foundation_models/, src/data/ and model
+# artifacts (*.pt, *.cbm, *.csv) are COMMITTED on purpose — the pre-trained
+# baselines must ship with the repo so every clone works without
+# retraining (~1h per cohort).
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs & env
+*.log
+.env
+.env.*

@@ -1,0 +1,79 @@
+{
+  "user_id": "demo_camera505_ai",
+  "user_name": "Demo_camera505_ai",
+  "initial_cohort": "healthy_adult",
+  "cohort_name": "Healthy Adult Cohort (CAP Sleep / DREAMT 2026)",
+  "created_at": "2026-08-23 13:36:15",
+  "total_sessions_completed": 3,
+  "cumulative_recording_hours": 0.03,
+  "current_parameters": {
+    "theta_offset": 0.0425,
+    "temperature_tau": 0.5,
+    "weights_W": [
+      -1.5,
+      0.8,
+      0.8,
+      -0.5
+    ],
+    "hr_mean": 69.95,
+    "hr_std": 6.5,
+    "resp_mean": 14.74,
+    "resp_std": 2.1,
+    "typical_rmssd": 35.0
+  },
+  "learning_trajectory": [
+    {
+      "session_idx": 0,
+      "date": "2026-08-23",
+      "theta": 0.05,
+      "temperature": 0.5,
+      "hr_mean": 68.0,
+      "resp_mean": 14.5,
+      "stability_score": 90.0,
+      "ahi_screening": 2.0,
+      "note": "Initial calibration mapped to Healthy Adult Cohort (CAP Sleep / DREAMT 2026)"
+    },
+    {
+      "session_idx": 1,
+      "date": "2026-08-23 13:36",
+      "duration_mins": 0.5,
+      "theta": 0.0475,
+      "temperature": 0.5,
+      "hr_mean": 68.8,
+      "resp_mean": 14.6,
+      "rmssd": 35.0,
+      "stability_score": 91.0,
+      "ahi_screening": 0.0,
+      "events_count": 0,
+      "note": "Online adapted (+0.5m session)"
+    },
+    {
+      "session_idx": 2,
+      "date": "2026-08-23 13:36",
+      "duration_mins": 0.5,
+      "theta": 0.045,
+      "temperature": 0.5,
+      "hr_mean": 69.44,
+      "resp_mean": 14.68,
+      "rmssd": 35.0,
+      "stability_score": 91.0,
+      "ahi_screening": 0.0,
+      "events_count": 0,
+      "note": "Online adapted (+0.5m session)"
+    },
+    {
+      "session_idx": 3,
+      "date": "2026-08-23 14:36",
+      "duration_mins": 0.5,
+      "theta": 0.0425,
+      "temperature": 0.5,
+      "hr_mean": 69.95,
+      "resp_mean": 14.74,
+      "rmssd": 35.0,
+      "stability_score": 91.0,
+      "ahi_screening": 0.0,
+      "events_count": 0,
+      "note": "Online adapted (+0.5m session)"
+    }
+  ]
+}

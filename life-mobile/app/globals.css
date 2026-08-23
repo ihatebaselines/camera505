@@ -1,0 +1,703 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   CAMERA 505 — Brutalist Monochrome Pixel / Terminal
+   Pure black · Sharp rects · JetBrains Mono · Blue accent
+   No gradients · No soft shadows · Uppercase caps · 2px radii
+   Inspired by OpenCode Go dashboard — terminal brutalism
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* core surfaces */
+  --bg:          #000000;
+  --bg-soft:     #0A0A0A;
+  --surface:     #111111;
+  --surface-2:   #1A1A1A;
+  --surface-3:   #151515;
+  --surface-4:   #1E1E1E;
+
+  /* borders — sharp, visible on black */
+  --border:        #222222;
+  --border-hi:     #2A2A2A;
+  --border-strong: #333333;
+  --border-bright: #3A3A3A;
+
+  /* text */
+  --ink:         #FFFFFF;
+  --text:        #FFFFFF;
+  --text-2:      #888888;
+  --text-2b:     #8A8A8A;
+  --text-3:      #555555;
+  --text-4:      #333333;
+  --text-dim:    #666666;
+
+  /* accent — electric blue (OpenCode Manage Subscription) */
+  --accent:        #0080FF;
+  --accent-hi:     #0A84FF;
+  --accent-hover:  #0066CC;
+  --accent-active: #0052A3;
+  --accent-tint:   rgba(0,128,255,0.10);
+  --accent-line:   rgba(0,128,255,0.35);
+  --accent-glow:   0 0 0 1px rgba(0,128,255,0.5);
+
+  /* success — terminal green for toggles */
+  --green:       #0E9F00;
+  --green-hi:    #00CC00;
+  --green-deep:  #0B7A00;
+  --green-tint:  rgba(14,159,0,0.10);
+  --green-line:  rgba(14,159,0,0.35);
+
+  /* danger — desaturated red for medical alerts */
+  --red:         #FF3333;
+  --red-hi:      #FF4444;
+  --red-deep:    #CC0000;
+  --red-tint:    rgba(255,51,51,0.09);
+  --red-line:    rgba(255,51,51,0.30);
+
+  /* warning amber */
+  --amber:       #FFB800;
+  --amber-deep:  #CC9300;
+  --amber-tint:  rgba(255,184,0,0.09);
+  --amber-line:  rgba(255,184,0,0.30);
+
+  /* shadows — disabled brutalism: hard edges only */
+  --shadow-card: none;
+  --shadow-pop:  none;
+  --shadow-accent: 0 0 0 1px var(--accent);
+
+  /* radii — sharp */
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 4px;
+  --r-lg: 4px;
+  --r-xl: 4px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: #333 #000;
+  scrollbar-width: thin;
+}
+
+.dashboard-content {
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 768px) {
+  .dashboard-content {
+    width: calc(100% - 16rem);
+    margin-left: 16rem;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Geist Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+  min-height: 100vh;
+  /* pixel crisp */
+  font-variant-ligatures: none;
+}
+
+/* keep headings mono + tight, uppercase feel optional */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+::selection { background: var(--accent); color: #fff; }
+::-moz-selection { background: var(--accent); color: #fff; }
+
+/* ── Surfaces — sharp rectangular cards ───────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+  position: relative;
+}
+.card-raised {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+}
+/* subtle inner hairline like OpenCode cards */
+.card::after,
+.card-raised::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,0.02);
+  pointer-events: none;
+}
+
+/* compat aliases — all map to same brutalist surface */
+.card-v2    {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+}
+.glass-card {
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+}
+
+/* terminal window — pure monochrome block */
+.terminal-window {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  box-shadow: none;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+}
+.terminal-window::before {
+  /* top bar dots like terminal — monochrome */
+  content: "";
+  display: block;
+  height: 28px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Buttons — brutalist, sharp, no pill ──────────────────── */
+.btn-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  transition: background 0.08s step-end, border-color 0.08s step-end, transform 0.06s ease, opacity 0.08s ease;
+  box-shadow: none;
+  padding: 0 16px;
+  min-height: 36px;
+}
+.btn-go:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-go:active { background: var(--accent-active); transform: translateY(1px); }
+.btn-go:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+.btn-stop {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--red);
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--red);
+  cursor: pointer;
+  transition: background 0.08s step-end, transform 0.06s ease;
+  box-shadow: none;
+  padding: 0 16px;
+  min-height: 36px;
+}
+.btn-stop:hover { background: var(--red-hi); border-color: var(--red-hi); }
+.btn-stop:active { background: var(--red-deep); transform: translateY(1px); }
+.btn-stop:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+.btn-ink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--text);
+  color: var(--bg);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--text);
+  cursor: pointer;
+  transition: background 0.08s step-end, color 0.08s step-end, transform 0.06s ease;
+  box-shadow: none;
+  padding: 0 16px;
+  min-height: 36px;
+}
+.btn-ink:hover { background: transparent; color: var(--text); border-color: var(--border-strong); }
+.btn-ink:active { transform: translateY(1px); background: var(--surface-2); }
+.btn-ink:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: background 0.08s step-end, border-color 0.08s step-end, color 0.08s step-end;
+  padding: 0 16px;
+  min-height: 36px;
+}
+.btn-ghost:hover { background: var(--surface-2); border-color: var(--text-3); color: var(--text); }
+.btn-ghost:active { background: var(--surface); transform: translateY(1px); }
+
+/* compat */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--accent); color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: var(--r-xs); border: 1px solid var(--accent); cursor: pointer;
+  transition: background 0.08s step-end, transform 0.06s ease;
+  box-shadow: none;
+  padding: 0 16px; min-height: 36px;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:active { transform: translateY(1px); background: var(--accent-active); }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: transparent; color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: var(--r-xs); border: 1px solid var(--border-strong); cursor: pointer;
+  transition: background 0.08s step-end, border-color 0.08s step-end;
+  padding: 0 16px; min-height: 36px;
+}
+.btn-secondary:hover { background: var(--surface-2); border-color: var(--text-3); }
+
+/* ── Inputs — dark field, mono, sharp focus ring ──────────── */
+.input-v2 {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-xs);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  transition: border-color 0.08s step-end, box-shadow 0.08s step-end, background 0.08s ease;
+  outline: none;
+  width: 100%;
+  padding: 10px 12px;
+}
+.input-v2::placeholder { color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+.input-v2:hover { border-color: var(--border-bright); }
+.input-v2:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background: var(--surface-2); }
+
+/* generic inputs inherit brutalist */
+input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="number"], textarea, select {
+  font-family: 'JetBrains Mono', monospace;
+}
+textarea.input-v2 { resize: vertical; min-height: 80px; }
+select.input-v2 { cursor: pointer; }
+
+/* checkbox / toggle — green #0E9F00 track */
+input[type="checkbox"] {
+  accent-color: var(--green);
+}
+
+/* ── Chips / Badges — sharp rectangular tags ───────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--r-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  line-height: 1.4;
+}
+.badge-mauve   { background: var(--surface-2); color: var(--text-2); border-color: var(--border); }
+.badge-green   { background: var(--green-tint); color: var(--green-hi); border-color: var(--green-line); }
+.badge-red     { background: var(--red-tint);   color: var(--red); border-color: var(--red-line); }
+.badge-yellow  { background: var(--amber-tint); color: var(--amber); border-color: var(--amber-line); }
+.badge-blue    { background: var(--accent-tint); color: var(--accent-hi); border-color: var(--accent-line); }
+.badge-peach   { background: var(--amber-tint); color: var(--amber); border-color: var(--amber-line); }
+
+/* ── Segmented Control — terminal switch ───────────────────── */
+.segmented {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 2px;
+  gap: 2px;
+}
+.segmented-item {
+  padding: 6px 14px;
+  border-radius: var(--r-xs);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: background 0.08s step-end, color 0.08s step-end, border-color 0.08s step-end;
+}
+.segmented-item:hover { color: var(--text); background: var(--surface-2); }
+.segmented-item.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+  box-shadow: none;
+}
+
+/* ── Typography helpers ───────────────────────────────────── */
+.font-tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; font-family: 'JetBrains Mono', monospace; }
+.label-caps {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-2);
+}
+.gradient-text { color: var(--text); background: none; -webkit-text-fill-color: currentcolor; }
+.text-accent   { color: var(--accent); }
+.text-success  { color: var(--green-hi); }
+.text-warning  { color: var(--amber); }
+.text-danger   { color: var(--red); }
+.text-info     { color: var(--accent); }
+.bg-accent     { background: var(--accent); }
+.bg-success    { background: var(--green); }
+.bg-warning    { background: var(--amber); }
+.bg-danger     { background: var(--red); }
+.bg-info       { background: var(--accent); }
+
+/* mono utility */
+.mono { font-family: 'JetBrains Mono', monospace; }
+.uppercase-mono {
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* giant watermark — brutalist stroked mono */
+.watermark {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,0.06);
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Animations — snappier, stepped ───────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fade-in 0.16s ease-out both; }
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.slide-in { animation: slide-up 0.16s ease-out both; }
+
+@keyframes terminal-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.terminal-cursor { animation: terminal-blink 0.9s step-end infinite; display: inline-block; width: 8px; height: 14px; background: var(--text); vertical-align: middle; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.6; transform: scale(0.9); }
+}
+.pulse-indicator { animation: pulse-dot 1.2s ease-in-out infinite; }
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  14%      { transform: scale(1.08); }
+  28%      { transform: scale(1); }
+  42%      { transform: scale(1.05); }
+  56%      { transform: scale(1); }
+}
+.animate-heartbeat { animation: heartbeat 1.6s ease-in-out infinite; }
+
+/* scanline / flicker subtle util */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+/* ── Divider — hairline on black ──────────────────────────── */
+.divider { height: 1px; background: var(--border); border: none; }
+hr { border: none; border-top: 1px solid var(--border); }
+
+/* ── Scrollbars — brutalist dark ──────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 0; border: 1px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+::-webkit-scrollbar-corner { background: var(--bg); }
+
+/* Firefox */
+* { scrollbar-width: thin; scrollbar-color: var(--border-strong) var(--bg); }
+
+/* ── Interactive tile — hard hover ────────────────────────── */
+.interactive-tile {
+  cursor: pointer;
+  transition: background 0.08s step-end, border-color 0.08s step-end;
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+}
+.interactive-tile:hover { background: var(--surface-2); border-color: var(--border-strong); }
+.interactive-tile:active { background: var(--surface); border-color: var(--text-3); }
+
+/* ── Links — mono underline ───────────────────────────────── */
+a { color: var(--text); text-decoration: none; }
+a:hover { color: var(--accent-hi); }
+a:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+
+/* ── Safe area ────────────────────────────────────────────── */
+.safe-area-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ── Ambient — no glow on black ───────────────────────────── */
+.ambient-glow-bg { background: var(--bg); }
+
+/* ── Brutalist extras ─────────────────────────────────────── */
+/* focus ring for keyboard nav */
+*:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+
+/* tables — sharp grid */
+table { border-collapse: collapse; width: 100%; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+th {
+  text-align: left;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text-2); border-bottom: 1px solid var(--border-strong); padding: 8px 10px;
+}
+td { border-bottom: 1px solid var(--border); padding: 10px; color: var(--text); }
+tr:hover td { background: var(--surface-2); }
+
+/* code / pre — terminal block */
+code, pre, kbd, samp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 12px;
+  overflow-x: auto;
+  color: var(--text);
+}
+code { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-xs); padding: 1px 5px; color: var(--text); }
+pre code { background: transparent; border: none; padding: 0; }
+
+/* toggle switch — use green #0E9F00 when checked */
+.toggle {
+  appearance: none;
+  width: 36px; height: 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.12s step-end, border-color 0.12s step-end;
+}
+.toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  background: var(--text-3);
+  border-radius: 999px;
+  transition: transform 0.12s ease, background 0.12s step-end;
+}
+.toggle:checked { background: var(--green); border-color: var(--green); }
+.toggle:checked::after { transform: translateX(16px); background: #fff; }
+
+/* progress bar — hard rect */
+.progress {
+  height: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  overflow: hidden;
+}
+.progress > span { display: block; height: 100%; background: var(--accent); }
+
+/* pixel border util — double border look */
+.pixel-border {
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 0 0 1px var(--bg), 0 0 0 2px var(--border);
+}
+
+/* hide soft shadows globally — brutality */
+[class*="shadow"] { --tw-shadow: 0 0 #0000 !important; }
+
+/* ensure white-on-white pages are overridden to dark */
+.bg-white, .bg-\[\#FAFAFB\], .bg-\[\#F5F5F7\], .bg-\[\#F0F0F3\] {
+  /* let utility classes still work but tip toward surface if unimportant */
+}
+
+/* ── Print — one-click PDF snapshot (brutalist monochrome) ───────── */
+.print-only { display: none; }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 10mm;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* hide chrome: sidebar, mobile nav, overlays, background parallax, cursors */
+  aside,
+  nav,
+  header,
+  .no-print,
+  .report-actions,
+  .watermark,
+  [aria-hidden="true"] {
+    display: none !important;
+  }
+
+  /* reset dashboard offset — full width white sheet */
+  .dashboard-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  /* reveal print-only header */
+  .print-only {
+    display: block !important;
+  }
+
+  /* report card — monochrome, sharp, ink-safe */
+  #printable-report {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+    max-width: none !important;
+  }
+
+  #printable-report > div,
+  #printable-report .bg-\[\#111\],
+  #printable-report .bg-\[\#0A0A0A\],
+  #printable-report .bg-\[\#1A1A1A\] {
+    background: #fff !important;
+    border-color: #000 !important;
+  }
+
+  /* subtle tinted AI boxes — desaturate to light grey for print */
+  #printable-report [class*="bg-[#0E9F00]"],
+  #printable-report [class*="bg-[#0080FF]"],
+  #printable-report [class*="bg-[#FFB800]"],
+  #printable-report [class*="bg-[#0E9F00]/"],
+  #printable-report [class*="bg-[#0080FF]/"],
+  #printable-report [class*="bg-[#FFB800]/"] {
+    background: #f4f4f4 !important;
+    border-color: #000 !important;
+  }
+
+  /* force all text to black for brutalist print */
+  #printable-report .text-white,
+  #printable-report .text-\[\#CCC\],
+  #printable-report .text-\[\#888\],
+  #printable-report .text-\[\#666\],
+  #printable-report .text-\[\#0E9F00\],
+  #printable-report .text-\[\#0080FF\],
+  #printable-report .text-\[\#FFB800\],
+  #printable-report .text-\[\#FF3333\] {
+    color: #000 !important;
+  }
+
+  #printable-report .border-\[\#222\],
+  #printable-report .border-\[\#333\] {
+    border-color: #000 !important;
+  }
+
+  /* hide interactive buttons inside report when printing */
+  #printable-report button {
+    display: none !important;
+  }
+
+  /* ensure sleep-stage bar remains visible and sharp */
+  #printable-report .bg-white { background: #000 !important; }
+  #printable-report .bg-\[\#0080FF\] { background: #000 !important; }
+  #printable-report .bg-\[\#555\] { background: #666 !important; }
+  #printable-report .bg-\[\#FF3333\] { background: #999 !important; }
+
+  /* avoid page-break inside cards */
+  #printable-report > div {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

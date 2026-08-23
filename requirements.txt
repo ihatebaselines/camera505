@@ -1,0 +1,27 @@
+# LIFE Platform Requirements
+# Backend & API
+fastapi>=0.110.0
+uvicorn>=0.28.0
+websockets>=12.0
+pydantic>=2.6.0
+pyserial>=3.5
+requests>=2.31.0
+
+# Scientific Computing / DSP
+numpy>=1.26.0
+scipy>=1.12.0
+scikit-learn>=1.4.0
+
+# Deep Learning
+torch>=2.2.0
+
+# High-Speed Columnar Database (C++ backed, Python API)
+duckdb>=1.0.0
+pandas>=2.0.0
+
+# PhysioNet Dataset Access
+wfdb>=4.0.0
+
+# Additional audio/signal processing
+soundfile>=0.12.0
+matplotlib>=3.7.0

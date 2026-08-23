@@ -1,0 +1,26 @@
+{
+  "user_id": "alex_runner",
+  "user_name": "Alex (Young Athlete)",
+  "initial_cohort": "young_athlete",
+  "total_sessions_completed": 1,
+  "cumulative_recording_hours": 7.2,
+  "current_parameters": {
+    "theta_offset": -0.22,
+    "temperature_tau": 0.38,
+    "hr_mean": 54.0,
+    "resp_mean": 12.5,
+    "typical_rmssd": 62.0
+  },
+  "loss_curve": [
+    0.0971,
+    0.0944,
+    0.0891,
+    0.0974,
+    0.1033,
+    0.0938,
+    0.0994,
+    0.0927,
+    0.0895,
+    0.0964
+  ]
+}
