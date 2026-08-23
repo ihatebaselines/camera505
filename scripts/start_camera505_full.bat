@@ -6,6 +6,9 @@ echo  CAMERA 505 - Full Platform
 echo  Backend + Frontend + AI Engine
 echo ==========================================
 echo.
+cd /d "%~dp0.."
+python scripts\init_db.py
+if %errorlevel% neq 0 exit /b %errorlevel%
 echo [1/3] Starting CAMERA 505 platform...
 start "CAMERA 505 Backend" python scripts\start_all.py
 echo [2/3] Waiting for backend to initialize...
