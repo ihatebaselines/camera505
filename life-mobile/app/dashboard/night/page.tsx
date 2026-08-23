@@ -23,6 +23,8 @@ import { Parallax, Reveal } from "@/components/ui/Parallax";
 import StudioLaunchButton from "@/components/StudioLaunchButton";
 import EcgStudioOverlay from "@/components/EcgStudioOverlay";
 import MicrophoneAudioStreamer from "@/components/MicrophoneAudioStreamer";
+import RppgCameraCard from "@/components/RppgCameraCard";
+import ActigraphyCard from "@/components/ActigraphyCard";
 import MelWaterfall from "@/components/MelWaterfall";
 import { getProfile, getDemo, getHistory, setHistory, getBackendUserId } from "@/lib/userStorage";
 
@@ -135,6 +137,7 @@ export default function NightSessionPage() {
     recommendation: string;
     mood_forecast: string;
     signature_message: string;
+    alert_explanations?: string[];
   } | null>(null);
   const [aiStatus, setAiStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
 
@@ -216,6 +219,10 @@ export default function NightSessionPage() {
     const now = Date.now();
     if (now - (alertTimesRef.current[key] || 0) < 4000) return;
     alertTimesRef.current[key] = now;
+    // Haptic escalation for correlated apnea events (phone-as-alarm, no new hardware)
+    if (key === 'apnea-correlated') {
+      try { navigator.vibrate?.([200, 100, 200]); } catch {}
+    }
     setLiveAlerts((prev) => [`[${formatClock(elapsedRef.current)}] ${message}`, ...prev].slice(0, 6));
   };
 
@@ -727,6 +734,7 @@ export default function NightSessionPage() {
       },
       total_events_count: result.events,
       data_source: result.source,
+      alert_events: liveAlerts.slice(0, 5).map((a) => ({ time: a.slice(1, 7), message: a.split("] ")[1] })),
     });
     };
 
@@ -795,6 +803,13 @@ export default function NightSessionPage() {
   };
 
   const r = sessionResult;
+
+  // Acoustic analytics from backend stop payload (fallback 0 when offline/local)
+  const stopP = stopPayloadRef.current;
+  const snoreBurdenIdx = Number(stopP?.snore_burden_index ?? 0) || 0;
+  const coughCount = Math.round(Number(stopP?.cough_count ?? 0) || 0);
+  const avgNoiseDb = Number(stopP?.avg_noise_db ?? 0) || 0;
+  const noiseHrCorr = Number(stopP?.noise_hr_correlation ?? 0) || 0;
 
   return (
     <div className="relative w-full bg-black min-h-screen">
@@ -1096,6 +1111,12 @@ export default function NightSessionPage() {
 
           <MicrophoneAudioStreamer isActive={useMic} onToggle={setUseMic} />
 
+          {/* Phone-as-sensor layer — rPPG + actigraphy, software only (no new hardware) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <RppgCameraCard ecgHr={frame.hr_bpm} />
+            <ActigraphyCard />
+          </div>
+
           {liveAlerts.length > 0 && (
             <div className="rounded-[2px] border border-[#FF3333]/30 bg-[#FF3333]/[0.06] p-4">
               <div className="flex items-center justify-between mb-2 border-b border-[#FF3333]/20 pb-2">
@@ -1266,6 +1287,31 @@ export default function NightSessionPage() {
               <span className="text-[#666] font-bold tracking-[0.06em] uppercase text-[11px]">APNEA-HYPOPNEA INDEX (AHI)</span>
               <span className="font-black text-[#0080FF] tabular-nums tracking-[-0.02em]">{r.ahi.toFixed(1)} <span className="text-[#555] font-bold text-[11px]">EVENTS/HR</span></span>
             </div>
+            <div className="flex justify-between items-center px-5 py-4">
+              <span className="text-[#666] font-bold tracking-[0.06em] uppercase text-[11px]">SNORE BURDEN INDEX</span>
+              <span className="font-black text-white tabular-nums tracking-[-0.02em]">{snoreBurdenIdx.toFixed(1)} <span className="text-[#666] font-bold text-[11px]">EVENTS/HR</span></span>
+            </div>
+            <div className="flex justify-between items-center px-5 py-4">
+              <span className="text-[#666] font-bold tracking-[0.06em] uppercase text-[11px]">COUGH EVENTS</span>
+              <span className="font-black text-white tabular-nums tracking-[-0.02em]">{coughCount}</span>
+            </div>
+            <div className="flex justify-between items-center px-5 py-4">
+              <span className="text-[#666] font-bold tracking-[0.06em] uppercase text-[11px]">AVG ROOM NOISE</span>
+              <span className="flex items-center gap-2">
+                <span
+                  className="font-mono text-[9px] font-bold tracking-[0.08em] uppercase border rounded-[2px] px-2 py-0.5"
+                  style={{
+                    color: Math.abs(noiseHrCorr) > 0.3 ? '#0080FF' : '#666',
+                    borderColor: Math.abs(noiseHrCorr) > 0.3 ? 'rgba(0,128,255,0.35)' : '#333',
+                    background: Math.abs(noiseHrCorr) > 0.3 ? 'rgba(0,128,255,0.08)' : 'transparent',
+                  }}
+                  title="Pearson correlation between ambient noise level and heart rate"
+                >
+                  NOISE↔HR r={noiseHrCorr.toFixed(2)}
+                </span>
+                <span className="font-black text-white tabular-nums tracking-[-0.02em]">{avgNoiseDb.toFixed(0)} <span className="text-[#666] font-bold text-[11px]">dB</span></span>
+              </span>
+            </div>
           </div>
 
           {/* AI Narrative Section */}
@@ -1316,6 +1362,17 @@ export default function NightSessionPage() {
                     </div>
                   </div>
                 </div>
+
+                {aiReport.alert_explanations && aiReport.alert_explanations.length > 0 && (
+                  <div className="space-y-1.5 pt-1 border-t border-[#222] mt-4">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#666] block">WHY IT FIRED</span>
+                    {aiReport.alert_explanations.map((explanation, i) => (
+                      <div key={i} className="font-mono text-[11px] text-[#0080FF] leading-relaxed normal-case tracking-normal">
+                        &gt; {explanation}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {aiReport.insights && aiReport.insights.length > 0 && (
                   <div className="space-y-2.5 pt-1 border-t border-[#222] mt-4">

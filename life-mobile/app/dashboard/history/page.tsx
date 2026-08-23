@@ -24,6 +24,7 @@ interface SessionRecord {
 export default function HistoryPage() {
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [filter, setFilter] = useState("7D");
+  const [federated, setFederated] = useState<{ users: number; cohorts: number } | null>(null);
 
   const demoData: SessionRecord[] = [
     {
@@ -93,7 +94,22 @@ export default function HistoryPage() {
 
   useEffect(() => {
     loadData();
+    loadFederatedStats();
   }, []);
+
+  const loadFederatedStats = async () => {
+    try {
+      const host =
+        typeof window !== "undefined" && window.location.hostname
+          ? window.location.hostname
+          : "localhost";
+      const res = await fetch(`http://${host}:8000/api/federated/cohort_stats`);
+      const data = await res.json();
+      const cohorts = (data?.cohorts || {}) as Record<string, { users?: number }>;
+      const users = Object.values(cohorts).reduce((acc, c) => acc + (c?.users || 0), 0);
+      if (users > 0) setFederated({ users, cohorts: Object.keys(cohorts).length });
+    } catch {}
+  };
 
   const loadData = () => {
     try {
@@ -137,6 +153,31 @@ export default function HistoryPage() {
 
   const chartData = [...displaySessions].reverse().slice(-7);
   const maxAhi = Math.max(8, ...chartData.map((d) => d.ahi || 0)) + 1.5;
+
+  // 3-night forecast: least-squares slope over chronological stability scores
+  const forecast = (() => {
+    const scores = [...displaySessions].reverse().map((s) => Number(s.stability_score) || 0);
+    if (scores.length < 3) return null;
+    const n = scores.length;
+    const meanI = (n - 1) / 2;
+    const meanY = scores.reduce((a, b) => a + b, 0) / n;
+    let num = 0;
+    let den = 0;
+    for (let i = 0; i < n; i++) {
+      num += (i - meanI) * (scores[i] - meanY);
+      den += (i - meanI) ** 2;
+    }
+    const slope = den === 0 ? 0 : num / den;
+    const last = scores[n - 1];
+    const preds = [1, 2, 3].map((i) => Math.round(Math.max(0, Math.min(100, last + slope * i))));
+    const arrow =
+      slope > 0.5
+        ? { sym: "↑", color: "#0E9F00" }
+        : slope < -0.5
+        ? { sym: "↓", color: "#FF3333" }
+        : { sym: "→", color: "#FFB800" };
+    return { preds, arrow };
+  })();
 
   return (
     <div className="relative w-full max-w-4xl mx-auto bg-black min-h-screen">
@@ -274,6 +315,34 @@ export default function HistoryPage() {
         </Reveal>
       )}
 
+      {/* ── 3-NIGHT FORECAST (local baseline drift) ──────────────── */}
+      {forecast && (
+        <Reveal delay={140}>
+          <div className="bg-[#111] border border-[#222] rounded-[2px] p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#222] pb-3">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#888]">3-NIGHT FORECAST</span>
+              <span className="font-mono text-[18px] font-black leading-none" style={{ color: forecast.arrow.color }}>
+                {forecast.arrow.sym}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              {forecast.preds.map((p, i) => (
+                <div
+                  key={i}
+                  className="w-14 h-14 bg-[#0A0A0A] border border-[#222] rounded-[2px] flex flex-col items-center justify-center"
+                >
+                  <span className="font-mono text-[16px] font-black text-white tabular-nums leading-none">{p}</span>
+                  <span className="font-mono text-[8px] font-bold uppercase tracking-[0.06em] text-[#555] mt-1">N+{i + 1}</span>
+                </div>
+              ))}
+            </div>
+            <div className="font-mono text-[9px] font-bold tracking-[0.06em] uppercase text-[#444]">
+              BASED ON LOCAL BASELINE DRIFT
+            </div>
+          </div>
+        </Reveal>
+      )}
+
       {/* ── SESSION LOG CARDS LIST ────────────────────────────────── */}
       <Reveal delay={100}>
         <div className="space-y-3">
@@ -373,6 +442,12 @@ export default function HistoryPage() {
       </Reveal>
 
       {/* ── FOOTER HELPER ─────────────────────────────────────────── */}
+      {federated && (
+        <div className="px-1 font-mono text-[10px] font-bold tracking-[0.06em] uppercase text-[#444]">
+          FEDERATED: {federated.users} PROFILES · {federated.cohorts} COHORTS
+        </div>
+      )}
+
       {displaySessions.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 px-1 font-mono text-[11px] font-bold tracking-[0.06em] uppercase">
           <button

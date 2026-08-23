@@ -226,6 +226,9 @@ def stop_monitoring_session():
         else {"status": "insufficient_windows", "windows": len(session_windows), "losses": {}}
     )
 
+    # Acoustic analytics: snore burden, cough stats, ambient noise correlation
+    acoustic_analytics = stream_manager.compute_acoustic_analytics()
+
     report_payload = {
         "status": "stopped",
         "summary": summary_dict,
@@ -235,6 +238,10 @@ def stop_monitoring_session():
         "sleep_stages": stages,
         "suspected_events": anomalies,
         "total_events_count": len(anomalies),
+        "snore_burden_index": acoustic_analytics["snore_burden_index"],
+        "cough_count": acoustic_analytics["cough_count"],
+        "avg_noise_db": acoustic_analytics["avg_noise_db"],
+        "noise_hr_correlation": acoustic_analytics["noise_hr_correlation"],
         "adapted_user_baseline": adapted_baseline,
         "foundation_model_fine_tuning": fine_tune_res,
         "ai_diagnostic_synthesis": (
@@ -647,6 +654,41 @@ def initialize_user_baseline_endpoint(payload: Dict[str, Any] = Body(...)):
     name = payload.get("user_name", "Patient")
     record = continual_engine.initialize_user_baseline(uid, cohort, name)
     return {"status": "initialized", "record": record}
+
+
+@app.get("/api/federated/cohort_stats")
+def get_federated_cohort_stats():
+    """
+    Lightweight federated cohort hint: aggregates anonymized counts per
+    initial_cohort and avg theta_offset across local_user/*/model/personal_history.json.
+    Only cohort keys and scalar theta values are aggregated — no raw
+    physiological data ever leaves the device.
+    """
+    try:
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        local_user_dir = os.path.join(base_dir, "local_user")
+        agg: Dict[str, Dict[str, float]] = {}
+        for entry in os.listdir(local_user_dir):
+            hist_path = os.path.join(local_user_dir, entry, "model", "personal_history.json")
+            if not os.path.isfile(hist_path):
+                continue
+            try:
+                with open(hist_path, "r", encoding="utf-8") as f:
+                    rec = json.load(f)
+                cohort_key = str(rec.get("initial_cohort") or "unknown")
+                theta = float(rec.get("current_parameters", {}).get("theta_offset", 0.0) or 0.0)
+                slot = agg.setdefault(cohort_key, {"users": 0, "_theta_sum": 0.0})
+                slot["users"] += 1
+                slot["_theta_sum"] += theta
+            except Exception:
+                continue
+        cohorts = {
+            key: {"users": int(v["users"]), "avg_theta": round(v["_theta_sum"] / v["users"], 4)}
+            for key, v in agg.items()
+        }
+        return {"cohorts": cohorts}
+    except Exception:
+        return {"cohorts": {}}
 
 
 @app.post("/api/audio/upload_chunk")

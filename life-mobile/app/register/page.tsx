@@ -70,7 +70,7 @@ export default function RegisterPage() {
           </div>
 
           {error && (
-            <div className="bg-[#1A0000] border border-[#331111] text-[#FF4444] text-[12px] font-mono font-bold p-3 rounded-[2px]">
+            <div className="bg-[#FF3333]/[0.06] border border-[#FF3333]/30 text-[#FF3333] text-[12px] font-mono font-bold p-3 rounded-[2px]">
               {error}
             </div>
           )}

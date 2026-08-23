@@ -51,6 +51,8 @@ class SerialEcgReader:
         self.recent_samples = deque(maxlen=2000)
         self.reconnect_interval = 3.0
         self.last_reconnect_attempt = 0.0
+        self._char_accum = ""
+        self._char_accum_time = 0.0
 
     def start(self):
         if not SERIAL_AVAILABLE:
@@ -92,6 +94,33 @@ class SerialEcgReader:
                 raw_line = self.ser.readline().decode('utf-8', errors='ignore').strip()
                 if not raw_line or raw_line.startswith('#'):
                     continue # Skip comments or empty lines
+
+                # Handle per-char firmware (user's working sketch prints "Leads Off" / "ESP-32S Ready" char-by-char)
+                if len(raw_line) == 1 and raw_line in "Leads OffESP-32SReady-":
+                    now = time.time()
+                    if now - self._char_accum_time > 0.5:
+                        self._char_accum = ""
+                    self._char_accum += raw_line
+                    self._char_accum_time = now
+                    accum_upper = self._char_accum.upper()
+                    if "LEADS OFF" in accum_upper:
+                        self._char_accum = ""
+                        parsed = (0.0, True, int(time.time() * 1000))
+                        self.recent_samples.append((0.0, True, int(time.time() * 1000)))
+                        if self.callback:
+                            self.callback(0.0, True, int(time.time() * 1000))
+                        continue
+                    if "READY" in accum_upper or "ESP-32S" in accum_upper:
+                        if len(self._char_accum) > 15:
+                            self._char_accum = ""
+                        continue
+                    if len(self._char_accum) > 20:
+                        self._char_accum = ""
+                    continue
+                else:
+                    # Reset char accumulator on normal line
+                    if self._char_accum:
+                        self._char_accum = ""
 
                 parsed = self._parse_line(raw_line)
                 if parsed:

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAMERA 505 — Technical Deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--card:#111;--border:#222;--txt:#fff;--body:#ccc;--mut:#666;--dim:#555;--acc:#0080FF}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden;font-family:'JetBrains Mono',Consolas,monospace;color:var(--body)}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;position:relative;background:var(--bg);flex:0 0 auto}
+#bar{position:absolute;top:0;left:0;height:3px;background:var(--acc);width:0;z-index:50;transition:width .25s}
+#hdr{position:absolute;top:0;left:0;right:0;height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid var(--border);font-size:9px;font-weight:700;letter-spacing:.16em;color:var(--dim);text-transform:uppercase;z-index:40;background:#000}
+#ftr{position:absolute;bottom:0;left:0;right:0;height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-top:1px solid var(--border);font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;z-index:40;background:#000}
+#ftr button{background:none;border:1px solid var(--border);color:var(--mut);font-family:inherit;font-size:11px;padding:4px 12px;cursor:pointer;margin-left:6px}
+#ftr button:hover{border-color:var(--acc);color:var(--acc)}
+.slide{position:absolute;top:34px;bottom:44px;left:0;right:0;padding:44px 72px 36px;display:none;flex-direction:column;background:#000}
+.slide.active{display:flex;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.label{font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--mut);text-transform:uppercase;margin-bottom:10px}
+.label .idx{color:var(--acc)}
+h1.t{font-size:46px;font-weight:800;color:var(--txt);letter-spacing:-.02em;line-height:1.05;margin-bottom:26px}
+ul.b{list-style:none}
+ul.b li{font-size:18px;line-height:1.5;color:var(--body);padding:9px 0 9px 30px;position:relative;border-bottom:1px solid #161616}
+ul.b li:last-child{border-bottom:none}
+ul.b li::before{content:"▸";position:absolute;left:2px;color:var(--acc)}
+ul.b b{color:var(--txt);font-weight:800}
+ul.b i{color:var(--acc);font-style:normal}
+.big{font-size:84px;font-weight:800;color:var(--txt);letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.med{font-size:54px;font-weight:800;color:var(--txt);letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--border);padding:26px 30px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}
+.stats{display:flex;gap:44px;align-items:flex-end;margin:8px 0 24px}
+.stat .k{font-size:10px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;font-weight:700;margin-top:10px}
+table.tb{width:100%;border-collapse:collapse;font-size:14px}
+table.tb th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);text-align:left;padding:7px 12px;border-bottom:2px solid var(--border)}
+table.tb td{padding:7px 12px;border-bottom:1px solid #181818;color:var(--body);font-variant-numeric:tabular-nums}
+table.tb td.w{color:var(--txt);font-weight:700}
+table.tb tr:last-child td{border-bottom:none}
+pre.ascii{background:var(--card);border:1px solid var(--border);padding:22px 28px;font-size:13.5px;line-height:1.42;color:var(--body);overflow:hidden}
+pre.ascii b{color:var(--txt)}
+pre.ascii i{color:var(--acc);font-style:normal}
+.chip{display:inline-block;border:1px solid var(--border);background:var(--card);color:var(--body);font-size:12px;font-weight:700;padding:6px 14px;margin:0 8px 8px 0;letter-spacing:.06em}
+.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border:1px solid}
+.LOW{color:#0E9F00;border-color:rgba(14,159,0,.35)}.ELEVATED{color:#FFB800;border-color:rgba(255,184,0,.35)}.HIGH{color:#FF3333;border-color:rgba(255,51,51,.35)}.NOSIG{color:#888;border-color:#444}
+.note{font-size:12px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:auto;padding-top:14px}
+@media print{
+ html,body{overflow:visible;height:auto}
+ #viewport{position:static;display:block}
+ #stage{transform:none!important;width:1280px;height:auto}
+ #bar,#ftr{display:none}
+ .slide{display:flex!important;position:relative;top:0;bottom:0;height:686px;page-break-after:always;animation:none}
+}
+@page{size:1280px 720px;margin:0}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<div id="bar"></div>
+<div id="hdr"><span>CAMERA 505 — SLEEP INTELLIGENCE PLATFORM</span><span>SIGNALS THAT CAN SHAPE OUR WORLD</span></div>
+<!-- 1 TITLE -->
+<section class="slide">
+  <div class="label"><span class="idx">01</span> / TITLE</div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+    <div style="font-size:100px;font-weight:800;color:var(--txt);letter-spacing:-.04em;line-height:.95">CAMERA 505</div>
+    <div style="font-size:22px;color:var(--acc);font-weight:700;margin-top:14px">SLEEP INTELLIGENCE PLATFORM</div>
+    <div style="margin-top:30px">
+      <span class="chip">ESP32 + AD8232</span><span class="chip">FASTAPI + SQLITE</span><span class="chip">ROPE 512-D TRANSFORMER</span><span class="chip">CATBOOST 12 COHORTS</span><span class="chip">OLLAMA LLAMA3.2</span><span class="chip">NEXT.JS</span>
+    </div>
+    <div class="stats" style="margin-top:40px">
+      <div class="stat"><div class="big">9</div><div class="k">DEMO SCENARIOS</div></div>
+      <div class="stat"><div class="big">12</div><div class="k">CLINICAL COHORTS</div></div>
+      <div class="stat"><div class="big">206,318</div><div class="k">HOURS CALIBRATION</div></div>
+      <div class="stat"><div class="big" style="color:var(--acc)">&lt;$15</div><div class="k">FULL BOM</div></div>
+    </div>
+  </div>
+  <div class="note">*WE DON'T SUPPORT 67*</div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide">
+  <div class="label"><span class="idx">02</span> / PROBLEM</div>
+  <h1 class="t">THE NIGHT IS A BLIND SPOT</h1>
+  <div class="stats">
+    <div class="stat"><div class="big">1B</div><div class="k">PEOPLE SNORE WORLDWIDE</div></div>
+    <div class="stat"><div class="big" style="color:var(--acc)">80%</div><div class="k">OF OSA UNDIAGNOSED</div></div>
+    <div class="stat"><div class="big">20+</div><div class="k">WIRES IN HOSPITAL PSG</div></div>
+  </div>
+  <ul class="b">
+    <li>Gold-standard PSG: hospital lab, one wired night, <b>thousands of euros</b>, months of waiting</li>
+    <li>Undiagnosed OSA drives <b>hypertension · AF · stroke · 2–3× accident risk</b></li>
+    <li>Wearables = PPG wrist proxies — <b>no electrical cardiac signal</b>, population averages</li>
+    <li>The loudest symptom of a silent disease is in your bedroom — <i>nobody is listening</i></li>
+  </ul>
+</section>
+
+<!-- 3 OUR SIGNAL -->
+<section class="slide">
+  <div class="label"><span class="idx">03</span> / OUR SIGNAL</div>
+  <h1 class="t">CHEAPEST FULL CARDIORESPIRATORY VIEW</h1>
+  <div class="g2">
+    <div class="card">
+      <div class="label">ELECTRICAL TRUTH</div>
+      <div class="med">AD8232 LEAD-II</div>
+      <div style="font-size:15px;margin-top:12px;line-height:1.55">~$5 front-end · 3 gel electrodes · ESP32 on <b style="color:#fff">COM3 @ 115200</b>. R-peaks, RR intervals, arrhythmia morphology.</div>
+    </div>
+    <div class="card">
+      <div class="label">ACOUSTIC TRUTH</div>
+      <div class="med">PHONE MIC</div>
+      <div style="font-size:15px;margin-top:12px;line-height:1.55">Already on the nightstand · <b style="color:#fff">16 kHz</b>. Respiration, snore band <b style="color:#fff">80–500 Hz</b>, cough bursts.</div>
+    </div>
+  </div>
+  <ul class="b" style="margin-top:22px">
+    <li><b>Fusion rule:</b> apnea flagged <i>only when both modalities agree</i> — ECG bradycardia + acoustic silence → gasp</li>
+    <li>Full BOM <b>&lt; $15</b>. No cloud. No subscription sensor.</li>
+  </ul>
+</section>
+
+<!-- 4 ARCHITECTURE -->
+<section class="slide">
+  <div class="label"><span class="idx">04</span> / ARCHITECTURE</div>
+  <h1 class="t">ONE PYTHON PROCESS, END TO END</h1>
+<pre class="ascii">
+┌ SENSORS ──────────────────────────────┐
+│ AD8232 LEAD-II ECG · COM3 @115200     │
+│ PHONE MIC · 16 kHz chunks             │
+│ ESP32 CSI RADAR · COM4 @921600        │
+└───────────────┬───────────────────────┘
+                ▼
+┌ PIPELINE — <b>FASTAPI :8000</b> (one process) ──────────┐
+│ DSP:  notch 50 Hz → BP 0.5–40 Hz →                │
+│       Pan-Tompkins → HRV · EDR · Mel-128          │
+│ AI:   RoPE 512-D transformer (60+60 tok / 30 s)   │
+│ ML:   CatBoost 12 cohorts (θ0, τ0 priors)         │
+│ DB:   SQLite life_signals.db · WAL · 6 tables     │
+└───────────────┬───────────────────┬───────────────┘
+                ▼ <i>WS /ws/live @ 50 Hz</i>   ▼ <i>:11434</i>
+     NEXT.JS life-mobile :6767   <b>OLLAMA llama3.2</b>
+</pre>
+  <ul class="b" style="margin-top:18px">
+    <li>Every 30 s window = <b>7,500 ECG samples @ 250 Hz + Mel-128 audio</b> → one 512-D embedding</li>
+    <li>Telemetry at <b>50 Hz</b> over WebSocket; SQLite persists everything locally</li>
+  </ul>
+</section>
+
+<!-- 5 DSP -->
+<section class="slide">
+  <div class="label"><span class="idx">05</span> / DSP</div>
+  <h1 class="t">CLASSIC ALGORITHMS DO THE HEAVY LIFTING</h1>
+  <ul class="b">
+    <li>Clean-up chain: <b>notch 50 Hz (Q=30)</b> → <b>Butterworth 0.5–40 Hz</b> → baseline-wander removal</li>
+    <li><b>Pan-Tompkins</b> QRS detector: derivative → square → <b>150 ms</b> moving-window integration → dual adaptive thresholds (SPKI/NPKI)</li>
+    <li>HRV per window: <b>SDNN · RMSSD · pNN50</b> · LF/HF · Poincaré SD1/SD2 — autonomic tone from the same 3 electrodes</li>
+    <li><b>EDR</b> (ECG-Derived Respiration): breathing rate from QRS amplitude modulation + RSA — <i>no chest strap</i></li>
+    <li>Audio: Mel-128 spectrogram · snore energy <b>80–500 Hz</b> (120/240/360 Hz harmonics) · cough transients</li>
+  </ul>
+</section>
+
+<!-- 6 AI STACK -->
+<section class="slide">
+  <div class="label"><span class="idx">06</span> / AI STACK</div>
+  <h1 class="t">MULTIMODAL ROPE TRANSFORMER</h1>
+  <div class="g3">
+    <div class="card"><div class="label">ECG ENCODER</div><div class="med">60×512</div><div style="font-size:13px;margin-top:10px;color:var(--mut)">30 s ECG · 7,500 pts → 1D-CNN (stride 125)</div></div>
+    <div class="card"><div class="label">AUDIO ENCODER</div><div class="med">60×512</div><div style="font-size:13px;margin-top:10px;color:var(--mut)">30 s Mel 128×3000 → 2D-CNN (stride 50)</div></div>
+    <div class="card"><div class="label">BACKBONE</div><div class="med" style="color:var(--acc)">512-D</div><div style="font-size:13px;margin-top:10px;color:var(--mut)">[CLS] + RoPE → 3 layers → window embedding</div></div>
+  </div>
+  <ul class="b" style="margin-top:22px">
+    <li><b>4 self-supervised losses:</b> masked reconstruction (40% masking) · cross-modal <b>InfoNCE</b> · future-window prediction · temporal consistency</li>
+    <li>Apnea = ECG deceleration + acoustic silence, <i>confirmed in shared latent space</i> — verified, not guessed</li>
+  </ul>
+</section>
+<!-- 7 CATBOOST -->
+<section class="slide">
+  <div class="label"><span class="idx">07</span> / COHORT ENGINE</div>
+  <h1 class="t">CATBOOST — 12 COHORTS, 206,318 HOURS</h1>
+  <div class="stats" style="margin-bottom:18px">
+    <div class="stat"><div class="big">206,318</div><div class="k">HOURS REGISTRY — SHHS · MESA · UCDDB · DREAMS · BIDMC · APNEA-ECG · FANTASIA</div></div>
+  </div>
+  <table class="tb">
+    <tr><th>COHORT</th><th>RISK</th><th>θ0 PRIOR</th><th>BASELINE HR</th><th>RESP</th></tr>
+    <tr><td class="w">Athletic &amp; High HRV (Fantasia)</td><td><span class="tag LOW">LOW</span></td><td>0.22</td><td>54 BPM</td><td>12.0 RPM</td></tr>
+    <tr><td class="w">Healthy Adult (APNEA-ECG)</td><td><span class="tag LOW">LOW</span></td><td>0.30</td><td>70 BPM</td><td>14.0 RPM</td></tr>
+    <tr><td class="w">Snoring &amp; Mild Apnea (SHHS)</td><td><span class="tag ELEVATED">ELEVATED</span></td><td>0.38</td><td>74 BPM</td><td>15.2 RPM</td></tr>
+    <tr><td class="w">Severe OSA Candidate (UCDDB)</td><td><span class="tag HIGH">HIGH</span></td><td>0.55</td><td>80 BPM</td><td>18.0 RPM</td></tr>
+  </table>
+  <ul class="b" style="margin-top:16px">
+    <li>9-question intake quiz → <b>1 of 12 cohorts</b> in seconds; each ships its own <b>θ0, τ0, baseline HR / respiration</b></li>
+    <li>Trained via <b>TRAIN_ALL_CAMERA_505.bat</b> — macro Soft-F1 benchmarked across all 12 cohorts</li>
+  </ul>
+</section>
+
+<!-- 8 PERSONALIZATION -->
+<section class="slide">
+  <div class="label"><span class="idx">08</span> / PERSONALIZATION</div>
+  <h1 class="t">THE APP LEARNS YOU — NOT THE POPULATION</h1>
+  <ul class="b">
+    <li>Your baseline is a distribution <b>N(μ, σ)</b>; thresholds are <b>μ ± kσ</b> — not population cutoffs</li>
+    <li>Baseline updates <b>only when anomaly score &lt; 0.35</b> — pathology can never become your "new normal"</li>
+    <li>After every night: continual engine adapts θ/τ + per-user model fine-tuned into <b>local_user/{user}/model/</b></li>
+    <li><b>Federated cohort stats</b> (<i>/api/federated/cohort_stats</i>): anonymized counts per cohort — raw signals never leave the device</li>
+    <li><b>3-night forecast:</b> least-squares trend over nightly stability scores — getting better or worse?</li>
+  </ul>
+</section>
+
+<!-- 9 PHONE AS SENSOR -->
+<section class="slide">
+  <div class="label"><span class="idx">09</span> / PHONE-AS-SENSOR</div>
+  <h1 class="t">FREEMIUM: THE PHONE IS A SENSOR KIT</h1>
+  <div class="g2">
+    <div class="card">
+      <div class="label">ACOUSTIC</div>
+      <div style="font-size:17px;line-height:1.55;margin-top:6px"><b style="color:#fff">Bedside microphone</b> → <b style="color:#fff">Snore Burden Index</b> (events/hour, 80–500 Hz band)</div>
+    </div>
+    <div class="card">
+      <div class="label">OPTICAL</div>
+      <div style="font-size:17px;line-height:1.55;margin-top:6px"><b style="color:#fff">rPPG</b> — finger-on-lens pulse in 30 s windows. PPG without buying anything.</div>
+    </div>
+    <div class="card">
+      <div class="label">MOTION</div>
+      <div style="font-size:17px;line-height:1.55;margin-top:6px"><b style="color:#fff">Actigraphy</b> — 30 s motion windows from the phone IMU. Fragmentation proxy.</div>
+    </div>
+    <div class="card">
+      <div class="label">ALERTING</div>
+      <div style="font-size:17px;line-height:1.55;margin-top:6px"><b style="color:#fff">navigator.vibrate</b> escalation on correlated apnea events. QR-pairs with any screen.</div>
+    </div>
+  </div>
+  <div class="note">START FREE WITH JUST A PHONE · UPGRADE TO ECG FOR $15</div>
+</section>
+
+<!-- 10 DEMO MAP -->
+<section class="slide">
+  <div class="label"><span class="idx">10</span> / DEMO MAP</div>
+  <h1 class="t" style="font-size:38px">9 DETERMINISTIC SCENARIOS — 9 DIFFERENT VERDICTS</h1>
+  <table class="tb" style="font-size:13px">
+    <tr><th>#</th><th>DEMO</th><th>SCENARIO (POST /api/scenario)</th><th>RISK</th><th>θ0</th><th>HR</th></tr>
+    <tr><td>1</td><td class="w">Healthy Rest · APNEA-ECG</td><td>healthy_rest</td><td><span class="tag LOW">LOW</span></td><td>0.30</td><td>70</td></tr>
+    <tr><td>2</td><td class="w">Snoring &amp; Mild Apnea · SHHS</td><td>snoring_episode</td><td><span class="tag ELEVATED">ELEVATED</span></td><td>0.38</td><td>74</td></tr>
+    <tr><td>3</td><td class="w">Obstructive Apnea · UCDDB</td><td>sleep_apnea</td><td><span class="tag HIGH">HIGH</span></td><td>0.55</td><td>80</td></tr>
+    <tr><td>4</td><td class="w">Irregular Rhythm · BIDMC</td><td>arrhythmia</td><td><span class="tag ELEVATED">ELEVATED</span></td><td>0.42</td><td>85</td></tr>
+    <tr><td>5</td><td class="w">Cough Cluster · PSG Audio</td><td>cough_attack</td><td><span class="tag ELEVATED">ELEVATED</span></td><td>0.40</td><td>76</td></tr>
+    <tr><td>6</td><td class="w">Postmenopausal · DREAMS</td><td>healthy_rest</td><td><span class="tag ELEVATED">ELEVATED</span></td><td>0.35</td><td>71</td></tr>
+    <tr><td>7</td><td class="w">Electrodes Detached</td><td>leads_off</td><td><span class="tag NOSIG">NO SIGNAL</span></td><td>—</td><td>0</td></tr>
+    <tr><td>8</td><td class="w">Breathing 6/min · Biofeedback</td><td>breathing_exercise</td><td><span class="tag LOW">LOW</span></td><td>0.28</td><td>65</td></tr>
+    <tr><td>9</td><td class="w">Stress Test · Snore+Cough Mix</td><td>stress_test</td><td><span class="tag ELEVATED">ELEVATED</span></td><td>0.42</td><td>88</td></tr>
+  </table>
+  <div class="note">DEMO 7 = HONESTY TEST — LEADS-OFF SHOWS NO SIGNAL. WE NEVER FAKE A HEARTBEAT.</div>
+</section>
+
+<!-- 11 JURY MODE -->
+<section class="slide">
+  <div class="label"><span class="idx">11</span> / JURY MODE</div>
+  <h1 class="t">40 SECONDS, ONE URL: /demo/live</h1>
+  <div class="stats" style="margin-bottom:16px">
+    <div class="stat"><div class="big" style="color:var(--acc)">40s</div><div class="k">FULL AUTO-RUN</div></div>
+    <div class="stat"><div class="big">1.44M</div><div class="k">FRAMES @ 50 HZ (8 H NIGHT)</div></div>
+    <div class="stat"><div class="big">412,800</div><div class="k">BEATS ANALYZED</div></div>
+  </div>
+  <table class="tb">
+    <tr><th>PHASE</th><th>TIME</th><th>WHAT THE JURY SEES</th></tr>
+    <tr><td class="w">BOOT</td><td>0–4 s</td><td>COM3 probe @ 115200 · DSP armed · 50 Hz lock</td></tr>
+    <tr><td class="w">SIGNAL</td><td>4–14 s</td><td>Live ECG oscilloscope + Mel waterfall</td></tr>
+    <tr><td class="w">ANOMALY</td><td>14–20 s</td><td>HR → <b style="color:#fff">54 BPM</b> · respiration → 0 · correlated alert</td></tr>
+    <tr><td class="w">AI</td><td>20–34 s</td><td>Inference log: transformer → CatBoost → hypnogram</td></tr>
+    <tr><td class="w">REPORT</td><td>34–40 s</td><td>AHI <b style="color:#fff">5.0</b> · 40 events → <b style="color:#fff">MILD APNEA SUSPECT</b></td></tr>
+  </table>
+  <div class="note">AHI: &lt;5 NORMAL · 5–15 MILD · 15–30 MODERATE · &gt;30 SEVERE — DETERMINISTIC, REPLAYABLE</div>
+</section>
+<!-- 12 RESULTS -->
+<section class="slide">
+  <div class="label"><span class="idx">12</span> / RESULTS</div>
+  <h1 class="t">DISTINCT SCORES, EVERY DEMO</h1>
+  <div class="stats" style="margin-bottom:16px">
+    <div class="stat"><div class="big">62<span style="font-size:30px;color:var(--mut)">/100</span></div><div class="k">STABILITY — JURY REPORT</div></div>
+    <div class="stat"><div class="big">5.0</div><div class="k">AHI EVENTS/HR</div></div>
+    <div class="stat"><div class="big">54→95</div><div class="k">BPM — BRADY → COMP. TACHY</div></div>
+  </div>
+  <ul class="b">
+    <li>Hypnogram: <b>Deep 18% · REM 21% · Light 47% · Awake 14%</b> · mean HR 64 BPM · respiration 11.2 RPM</li>
+    <li><b>Snore Burden Index</b> per session from real 80–500 Hz energy — snoring, stress-mix and healthy nights give different SBI values</li>
+    <li>Recovery score <b>0–100</b> + next-day mood forecast, generated from the night's own metrics</li>
+    <li><b>9/9 demos</b> end with different AHI, stability, cohort and report — <i>no canned output</i></li>
+  </ul>
+</section>
+
+<!-- 13 LOCAL FIRST -->
+<section class="slide">
+  <div class="label"><span class="idx">13</span> / LOCAL-FIRST &amp; CRAFT</div>
+  <h1 class="t">ZERO CLOUD. ZERO EXCUSES.</h1>
+  <ul class="b">
+    <li><b>Ollama llama3.2</b> on :11434 writes the morning narrative — <i>zero data leaves the room</i></li>
+    <li>Deterministic fallback report if the LLM is absent — <b>the demo never dies on stage</b></li>
+    <li>SQLite WAL · 6 tables · <b>60 FPS</b> desktop studio (oscilloscope + live FFT 0–20 Hz)</li>
+    <li>Next.js brutalist monochrome UI: <b>#000 / #111 / #222</b> · JetBrains Mono · tabular-nums — <i>this deck IS the app design</i></li>
+    <li>Honest hardware states only: <b>SIMULATOR MODE · SENSOR ONLINE · NO SIGNAL</b></li>
+  </ul>
+</section>
+
+<!-- 14 ROADMAP -->
+<section class="slide">
+  <div class="label"><span class="idx">14</span> / ROADMAP</div>
+  <h1 class="t">FROM HACKATHON ROOM TO BEDSIDE</h1>
+  <table class="tb" style="font-size:15px">
+    <tr><th style="width:190px">WHEN</th><th>WHAT</th></tr>
+    <tr><td class="w">NOW — MVP</td><td>9 demos · 12 cohorts · local AI · phone-as-sensor — one <b style="color:#fff">START_CAMERA_505.bat</b></td></tr>
+    <tr><td class="w">+1 MONTH</td><td>Real-night pilots benchmarked against <b style="color:#fff">BIDMC / APNEA-ECG</b> PSG corpora (already in repo)</td></tr>
+    <tr><td class="w">+3 MONTHS</td><td>WiFi CSI contactless radar productized — <b style="color:#fff">ESP-NOW 100 Hz</b> firmware already written</td></tr>
+    <tr><td class="w">+6 MONTHS</td><td>Federated learning across cohorts · CE pathway as <b style="color:#fff">screening</b> device (not diagnostic)</td></tr>
+    <tr><td class="w">+12 MONTHS</td><td>App stores + SDK · hospital screening pilots · band version</td></tr>
+  </table>
+</section>
+
+<!-- 15 TEAM / ASK -->
+<section class="slide">
+  <div class="label"><span class="idx">15</span> / TEAM &amp; ASK</div>
+  <h1 class="t">TEAM CAMERA 505</h1>
+  <ul class="b">
+    <li>One room, full stack: <b>firmware · DSP · ML · backend · UI</b></li>
+    <li>Working today: live hardware ingestion @ 115200 · 50 Hz telemetry · transformer + CatBoost + local LLM · 9 demos</li>
+    <li><b>Ask 1:</b> clinical partner for validation nights against real PSG</li>
+    <li><b>Ask 2:</b> hardware seed for 50 pilot kits (≈ $15 each)</li>
+    <li><b>Ask 3:</b> mentors in regulatory (CE / MDR) for the screening pathway</li>
+  </ul>
+  <div class="note">EVERYTHING RUNS FROM START_CAMERA_505.bat</div>
+</section>
+
+<!-- 16 TAGLINE -->
+<section class="slide" style="align-items:center;justify-content:center;text-align:center">
+  <div style="font-size:88px;font-weight:800;color:var(--txt);letter-spacing:-.04em;line-height:1.05"><span style="color:var(--acc)">*</span>WE DON'T SUPPORT 67<span style="color:var(--acc)">*</span></div>
+  <div style="font-size:18px;color:var(--mut);margin-top:36px;letter-spacing:.14em">SIGNALS THAT CAN SHAPE OUR WORLD — CAMERA 505</div>
+  <div style="font-size:13px;color:var(--dim);margin-top:16px;letter-spacing:.14em">( BETWEEN US: ASK US AFTER )</div>
+</section>
+<div id="ftr"><span>← → NAVIGATE · PRINT-TO-PDF READY</span><span style="display:flex;align-items:center"><span id="cnt" style="margin-right:14px">01 / 16</span><button onclick="go(i-1)">◀</button><button onclick="go(i+1)">▶</button></span></div>
+</div></div>
+<script>
+var slides=[].slice.call(document.querySelectorAll('.slide')),i=0;
+function go(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach(function(s,k){s.classList.toggle('active',k===i)});document.getElementById('cnt').textContent=('0'+(i+1)).slice(-2)+' / '+('0'+slides.length).slice(-2);document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%'}
+addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1)}else if(e.key==='Home'){go(0)}else if(e.key==='End'){go(slides.length-1)}});
+function fit(){var s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('stage').style.transform='scale('+s+')'}
+addEventListener('resize',fit);fit();go(0);
+</script>
+</body>
+</html>

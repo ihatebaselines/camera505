@@ -1,0 +1,194 @@
+================================================================================
+🫀 CAMERA 505 — SLEEP INTELLIGENCE & CARDIORESPIRATORY PLATFORM
+GHID COMPLET DE PREZENTARE, ARHITECTURĂ ȘI RĂSPUNSURI LA ÎNTREBĂRI (A la Z)
+Tagline oficial: *WE DON'T SUPPORT 67*
+Locație proiect: C:\Users\cercu\.gemini\antigravity\scratch\camera 505 hackathon
+================================================================================
+
+--------------------------------------------------------------------------------
+1. PITCH-UL DE 30 DE SECUNDE (Ce este proiectul?)
+--------------------------------------------------------------------------------
+"CAMERA 505 este o platformă medicală multimodală edge-AI pentru monitorizarea
+cardiorespiratorie continuă și diagnosticarea timpurie a Apneii Obstructive de
+Somn (OSA) direct la domiciliul pacientului. 
+Folosind un senzor ECG de precizie (AD8232), analiză acustică a sforăitului, radar
+WiFi CSI și algoritmi DSP avansați (Pan-Tompkins + EDR), sistemul extrage
+frecvența cardiacă, variabilitatea HRV și frecvența respiratorie dintr-un singur
+semnal. Datele sunt calibrate prin modele CatBoost pe 12 cohorte clinice ESRS,
+procesate de un Foundation Model Transformer pe 512 dimensiuni și sintetizate
+într-un raport medical complet de un LLM local privat (Ollama Llama-3.2)."
+
+--------------------------------------------------------------------------------
+2. PROBLEMA MEDICALĂ ȘI SOLUȚIA NOASTRĂ
+--------------------------------------------------------------------------------
+• Problema:
+  - Peste 1 miliard de oameni suferă de apnee de somn, dar 80% sunt nediagnosticați.
+  - Standardul actual (Polisomnografia în laborator) costă peste 1.000€/noapte,
+    necesită zeci de cabluri incomode și are liste de așteptare de luni de zile.
+  - Ceasurile inteligente comerciale oferă doar estimări brute optice (PPG)
+    afectate masiv de mișcare.
+
+• Soluția CAMERA 505:
+  - Monitorizare de grad clinic acasă cu doar 3 electrozi ECG confortabili.
+  - Cost hardware sub 30€ (Arduino/ESP32 + AD8232).
+  - 100% Privacy-First: Totul rulează local pe mașina utilizatorului (FastAPI +
+    SQLite + Ollama), fără trimitere de date biometrice în cloud.
+
+--------------------------------------------------------------------------------
+3. ARHITECTURA TEHNICĂ DE LA A LA Z (Cum funcționează fiecare strat)
+--------------------------------------------------------------------------------
+
+A. STRATUL DE HARDWARE & INGESTIE (Ingestion Layer)
+   1. Senzorul ECG: AD8232 (Lead-II, electrozi RA - braț drept, LA - braț stâng,
+      RL - picior drept/referință).
+   2. Comunicație serială: COM3 @ 115200 baud (`src/ingestion/serial_stream.py`).
+   3. Rata de eșantionare: 50 Hz / 250 Hz continuu.
+   4. Detectare electrozi căzuți: Pinii digitali Leads-Off (LO+ / LO-) de pe
+      AD8232 alertează instant deconectarea contactului cu pielea.
+   5. Radar WiFi CSI: ESP32-S3 monitorizează micromișcările toracice fără contact
+      prin perturbații ale undelor RF pe UDP port 3333 (`esp32_wifi_stream.py`).
+   6. Simulator Fiziologic: Generator sintetic de 50 Hz pentru teste automate
+      și demonstrații (`synthetic_generator.py`).
+
+B. PRELUCRAREA SEMNALULUI (DSP - Digital Signal Processing)
+   1. Filtrare: Bandpass Butterworth (0.5 Hz - 40 Hz) elimină deriva liniei de
+      bază (respirația mecanică) și zgomotul muscular (EMG) + filtru Notch 50Hz.
+   2. Algoritmul Pan-Tompkins:
+      - Derivare matematică -> Ridicare la pătrat -> Integrare pe fereastră mobilă
+      - Detectează complexul QRS și undele R în timp real.
+   3. EDR (ECG-Derived Respiration):
+      - În timpul inspirului/expirului, mișcarea plămânilor schimbă axa electrică
+        a inimii și amplitudinea undei R.
+      - Prin urmărirea anvelopei undelor R, extragem curba respiratorie (RPM)
+        DIRECT din ECG, fără a fi nevoie de o mască/senzor nazal!
+   4. HRV (Heart Rate Variability):
+      - Calculează intervalele R-R (NN), SDNN, RMSSD și raportul LF/HF
+        (echilibrul sistemului nervos simpatic vs. parasimpatic).
+
+C. MODELELE DE INTELIGENȚĂ ARTIFICIALĂ (AI & ML Layer)
+   1. CatBoost 12-Cohort Classifier:
+      - Folosește răspunsurile din chestionarul medical ESRS (vârstă, sex, BMI,
+        poziție, sforăit, etc.) pentru a clasifica pacientul într-o cohortă.
+      - Setează priorii inițiali personalizați:
+        * θ₀ (Apnea Detection Threshold): 0.22 – 0.55
+        * τ₀ (Temporal Prior / Decay): 0.40 – 0.70
+        * Puls și respirație de bază.
+   2. 10-Step RoPE Foundation Model:
+      - Transformer cu Rotary Position Embeddings antrenat pe 206.318 ore de
+        înregistrări din marile baze de date clinice (PhysioNet Apnea-ECG, SHHS,
+        MESA, UCDDB, DREAMS, ISRUC).
+      - Spațiu latent de 512 dimensiuni pentru predicția stadiilor de somn.
+   3. Soft-F1 Overnight Adaptation:
+      - Modifică dinamic pragurile pe parcursul nopții pentru a preveni
+        alarmele false cauzate de oboseala naturală a mușchilor toracici.
+   4. Raportare Clinică Generativă Locală (Ollama):
+      - Rulează modelul `llama3.2:1b` pe portul 11434 (`/api/ai/report`).
+      - Generează interpretare narativă, scor de recuperare (/100) și
+        recomandări medicale personalizate.
+
+D. BACKEND & INFRASTRUCTURĂ SOFTWARE
+   - Framework: Python FastAPI + Uvicorn (`src/backend/app.py`), port 8000.
+   - WebSockets: `ws://localhost:8000/ws/live` (stream continuu 50Hz pentru UI).
+   - REST Endpoints principale:
+     * `POST /api/session/start` (pornește achiziția)
+     * `POST /api/session/stop` (oprește, calculează AHI și stadiile de somn)
+     * `POST /api/ai/report` (sinteză Ollama LLM)
+     * `GET  /api/launch-ecg-studio` (lansează osciloscopul Python Tkinter la 60 FPS)
+     * `GET  /api/com-ports` (detectează porturile seriale active)
+   - Bază de date: SQLite local (`life_signals.db`).
+
+E. FRONTEND & DESIGN SYSTEM (Next.js 15)
+   - Framework: Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS.
+   - Port: `http://localhost:6767`
+   - Design: Apple Dark Mode profesional (#0A0A0C fundal, #161618 carduri,
+     #242428 borduri, #6E56CF accent indigo, #30D158 verde, #FF453A roșu).
+   - Structura paginilor:
+     * `/` : Router inteligent cu verificare sesiune și redirect automat.
+     * `/login` & `/register` : Autentificare securizată + buton demo instant.
+     * `/quiz` : Chestionarul ESRS în 9 pași cu animație terminal CatBoost.
+     * `/dashboard` : Panou live, osciloscop 50Hz, card Last Night, 4 KPI-uri.
+     * `/dashboard/night` : Managementul sesiunii nocturne în 4 stări (Idle,
+       Active, Scoring Terminal, Raport Medical).
+     * `/dashboard/history` : Grafic de severitate AHI pe 7 zile, jurnal sesiuni.
+     * `/dashboard/profile` : Detalii cont, fișa modelului AI calibrat cu
+       parametrii θ₀ și τ₀, cele 9 răspunsuri medicale.
+
+--------------------------------------------------------------------------------
+4. TABELUL CELOR 12 COHORTE CLINICE CATBOOST (De știut la prezentare!)
+--------------------------------------------------------------------------------
+1. Obese High-Risk OSA (SHHS)        -> Risc: HIGH,     θ₀: 0.52, τ₀: 0.65, HR: 82
+2. Senior Hypertensive (MESA/SHHS)   -> Risc: HIGH,     θ₀: 0.48, τ₀: 0.60, HR: 78
+3. Severe OSA Candidate (UCDDB)      -> Risc: HIGH,     θ₀: 0.55, τ₀: 0.70, HR: 80
+4. Snoring & Mild Apnea (SHHS/MESA)  -> Risc: ELEVATED, θ₀: 0.38, τ₀: 0.55, HR: 74
+5. Postmenopausal Female (DREAMS)    -> Risc: ELEVATED, θ₀: 0.35, τ₀: 0.52, HR: 71
+6. Insomnia & Non-Apnea Fatigue      -> Risc: LOW,      θ₀: 0.28, τ₀: 0.45, HR: 68
+7. Athletic & High HRV (Fantasia)    -> Risc: LOW,      θ₀: 0.22, τ₀: 0.40, HR: 54
+8. Healthy Adult Baseline (APNEA-ECG)-> Risc: LOW,      θ₀: 0.30, τ₀: 0.48, HR: 70
+
+--------------------------------------------------------------------------------
+5. Q&A / ÎNTREBĂRI GRELE DE LA JURIZARE ȘI RĂSPUNSURILE PERFECTE
+--------------------------------------------------------------------------------
+
+Q1: Cum poți măsura respirația doar dintr-un semnal ECG fără senzor la nas?
+R1: "Folosim tehnica EDR (ECG-Derived Respiration). Când pacientul respiră,
+    expansiunea și contracția cutiei toracice modifică distanța electrozilor
+    față de inimă și axa vectorului cardiac, modulând amplitudinea undei R.
+    Prin extragerea anvelopei de vârfuri R-R și aplicarea unui filtru trece-jos,
+    reconstituim curba respiratorie continuă și calculăm RPM-ul exact."
+
+Q2: De ce ați folosit două modele AI (CatBoost + Transformer) în loc de unul singur?
+R2: "Sunt două tipuri de date complet diferite:
+    1. CatBoost excelează pe date tabulare demografice statice (răspunsurile la
+       quiz-ul ESRS: BMI, vârstă, antecedente) pentru a stabili a-priori pragurile
+       de sensibilitate (θ₀ și τ₀).
+    2. Transformerul (RoPE Foundation Model) procesează serii temporale continue
+       la 50 Hz pentru detecția evenimentelor dinamice de micro-trezire și
+       clasificarea stadiilor de somn (Deep, REM, Light, Awake)."
+
+Q3: Ce se întâmplă dacă utilizatorul se mișcă în somn și sare un electrod?
+R3: "Senzorul AD8232 dispune de circuite hardware dedicate de detecție Leads-Off
+    (pinii LO+ și LO-). În momentul în care impedanța pielii crește brusc sau
+    un electrod este decuplat, sistemul marchează semnalul ca invalid, ignoră
+    artefactele și nu generează alarme false de apnee."
+
+Q4: Cum asigurați confidențialitatea datelor medicale (GDPR / HIPAA)?
+R4: "Arhitectura este 100% Edge / Local-First. Baza de date este un fișier local
+    SQLite criptat, serverul rulează pe localhost:8000, iar modelul de limbaj
+    pentru raportul clinic rulează local prin Ollama (fără apeluri externe către
+    OpenAI sau alți furnizori cloud)."
+
+Q5: Cum este calculat indicele AHI (Apnea-Hypopnea Index)?
+R5: "AHI reprezintă numărul total de evenimente de apnee (oprirea respirației >10s)
+    și hipopnee (reducerea fluxului cu >30% asociată cu desaturare/arousal)
+    împărțit la numărul total de ore de somn:
+    - Normal: AHI < 5
+    - Apnee Ușoară (Mild): 5 <= AHI < 15
+    - Apnee Moderată: 15 <= AHI < 30
+    - Apnee Severă: AHI >= 30"
+
+--------------------------------------------------------------------------------
+6. GHID DE PORNIRE RAPIDĂ (Cum arăți proiectul live la jurați)
+--------------------------------------------------------------------------------
+Pasul 1: Deschide un terminal și pornește backend-ul:
+  cd "C:\Users\cercu\.gemini\antigravity\scratch\camera 505 hackathon"
+  python -m uvicorn src.backend.app:app --host 0.0.0.0 --port 8000
+
+Pasul 2: În al doilea terminal, pornește frontend-ul:
+  cd "C:\Users\cercu\.gemini\antigravity\scratch\camera 505 hackathon\life-mobile"
+  npm run dev -- --port 6767
+
+Pasul 3: Deschide browserul la:
+  http://localhost:6767
+
+Pasul 4: Demo flow recomandat:
+  1. Arată ecranul de Login/Register sau apasă "Instant Guest Demo Login".
+  2. Arată Quiz-ul medical în 9 pași și animația terminal CatBoost.
+  3. Arată Dashboard-ul live cu semnalele color-coded și osciloscopul ECG.
+  4. Apasă "Desktop ECG Studio" (sau "Start Night Monitoring") ca să vadă
+     fereastra Python Tkinter osciloscop la 60 FPS cu spectrul FFT live.
+  5. Intră pe "Profile" ca să le arăți cohorta clinică calibrată (θ₀, τ₀)
+     și istoricul pe 7 zile din pagina "History".
+
+================================================================================
+FINALUL GHIDULUI — Succes la prezentare! *WE DON'T SUPPORT 67*
+================================================================================

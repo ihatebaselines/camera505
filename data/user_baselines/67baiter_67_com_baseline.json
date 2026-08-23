@@ -1,0 +1,51 @@
+{
+  "user_id": "67baiter_67_com",
+  "user_name": "67baiter_67_com",
+  "initial_cohort": "healthy_adult",
+  "cohort_name": "Healthy Adult Cohort (CAP Sleep / DREAMT 2026)",
+  "created_at": "2026-08-23 16:34:31",
+  "total_sessions_completed": 1,
+  "cumulative_recording_hours": 0.02,
+  "current_parameters": {
+    "theta_offset": 0.055,
+    "temperature_tau": 0.5,
+    "weights_W": [
+      -1.5,
+      0.8,
+      0.8,
+      -0.5
+    ],
+    "hr_mean": 70.06,
+    "hr_std": 6.5,
+    "resp_mean": 15.68,
+    "resp_std": 2.1,
+    "typical_rmssd": 65.0
+  },
+  "learning_trajectory": [
+    {
+      "session_idx": 0,
+      "date": "2026-08-23",
+      "theta": 0.05,
+      "temperature": 0.5,
+      "hr_mean": 68.0,
+      "resp_mean": 14.5,
+      "stability_score": 90.0,
+      "ahi_screening": 2.0,
+      "note": "Initial calibration mapped to Healthy Adult Cohort (CAP Sleep / DREAMT 2026)"
+    },
+    {
+      "session_idx": 1,
+      "date": "2026-08-23 16:34",
+      "duration_mins": 1.0,
+      "theta": 0.055,
+      "temperature": 0.5,
+      "hr_mean": 70.06,
+      "resp_mean": 15.68,
+      "rmssd": 65.0,
+      "stability_score": 63.0,
+      "ahi_screening": 10.0,
+      "events_count": 2,
+      "note": "Online adapted (+1.0m session)"
+    }
+  ]
+}

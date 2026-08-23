@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAMERA 505 — Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#000;--card:#111;--border:#222;--txt:#fff;--mut:#666;--dim:#555;--acc:#0080FF}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden;font-family:'JetBrains Mono',Consolas,monospace;color:#ccc}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{width:1280px;height:720px;position:relative;background:#000;flex:0 0 auto}
+#bar{position:absolute;top:0;left:0;height:3px;background:var(--acc);width:0;z-index:50;transition:width .25s}
+#ftr{position:absolute;bottom:0;left:0;right:0;height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-top:1px solid var(--border);font-size:9px;font-weight:700;letter-spacing:.14em;color:var(--dim);text-transform:uppercase;z-index:40;background:#000}
+#ftr button{background:none;border:1px solid var(--border);color:var(--mut);font-family:inherit;font-size:11px;padding:4px 12px;cursor:pointer;margin-left:6px}
+#ftr button:hover{border-color:var(--acc);color:var(--acc)}
+.slide{position:absolute;top:0;bottom:40px;left:0;right:0;padding:60px 80px;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#000}
+.slide.active{display:flex;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.q{font-size:64px;font-weight:800;color:var(--txt);letter-spacing:-.03em;line-height:1.15;max-width:1050px}
+.num{font-size:150px;font-weight:800;color:var(--txt);letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.sub{font-size:20px;font-weight:700;color:var(--mut);letter-spacing:.14em;text-transform:uppercase;margin-top:26px}
+.accent{color:var(--acc)}
+.photo{width:640px;height:380px;border:2px dashed #333;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:var(--card)}
+.photo span{font-size:15px;font-weight:700;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+.mini{font-size:12px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:40px}
+@media print{
+ html,body{overflow:visible;height:auto}
+ #viewport{position:static;display:block}
+ #stage{transform:none!important;width:1280px;height:auto}
+ #bar,#ftr{display:none}
+ .slide{display:flex!important;position:relative;height:680px;page-break-after:always;animation:none}
+}
+@page{size:1280px 720px;margin:0}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<div id="bar"></div>
+
+<!-- 1 HOOK -->
+<section class="slide">
+  <div class="q">CINE A AUZIT PE CINEVA SFORĂIND ASEARĂ?</div>
+  <div class="mini">RIDICĂ MÂNA · SUNT CURIOS</div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="slide">
+  <div class="num">1 MILIARD</div>
+  <div class="sub">SFORĂIE ÎN FIECARE NOAPTE</div>
+  <div class="num accent" style="font-size:110px;margin-top:44px">80%</div>
+  <div class="sub">NICIUN DIAGNOSTIC</div>
+</section>
+
+<!-- 3 PRODUCT -->
+<section class="slide">
+  <div class="photo">
+    <span>[ FOTO PRODUS AICI ]</span>
+    <span style="color:#888">TELEFON PE NOPTIERĂ + SENZOR PE PIEPT</span>
+  </div>
+  <div class="sub" style="margin-top:30px">O NOAPTE ÎNTREAGĂ · 40 DE SECUNDE</div>
+</section>
+
+<!-- 4 COST -->
+<section class="slide">
+  <div class="q"><span class="accent">5 LEI</span> SENZOR + TELEFONUL TĂU</div>
+  <div class="mini">TREI ELECTROZI · ZERO SPITAL</div>
+</section>
+
+<!-- 5 AI LOCAL -->
+<section class="slide">
+  <div class="q">AI CARE DOARME LÂNGĂ TINE</div>
+  <div class="num accent" style="font-size:96px;margin-top:34px">100% LOCAL</div>
+  <div class="sub">ZERO CLOUD · RAPORT DIMINEAȚA</div>
+</section>
+
+<!-- 6 TAGLINE -->
+<section class="slide">
+  <div style="font-size:84px;font-weight:800;color:var(--txt);letter-spacing:-.04em;line-height:1.05"><span class="accent">*</span>WE DON'T SUPPORT 67<span class="accent">*</span></div>
+  <div class="sub" style="margin-top:40px">CAMERA 505 · ÎNTREBAȚI-NE DUPĂ</div>
+</section>
+
+<div id="ftr"><span>CAMERA 505 — PITCH</span><span style="display:flex;align-items:center"><span id="cnt" style="margin-right:14px;color:var(--mut)">1 / 6</span><button onclick="go(i-1)">◀</button><button onclick="go(i+1)">▶</button></span></div>
+</div></div>
+<script>
+var slides=[].slice.call(document.querySelectorAll('.slide')),i=0;
+function go(n){i=Math.max(0,Math.min(slides.length-1,n));slides.forEach(function(s,k){s.classList.toggle('active',k===i)});document.getElementById('cnt').textContent=(i+1)+' / '+slides.length;document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%'}
+addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1)}else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1)}else if(e.key==='Home'){go(0)}else if(e.key==='End'){go(slides.length-1)}});
+function fit(){var s=Math.min(innerWidth/1280,innerHeight/720);document.getElementById('stage').style.transform='scale('+s+')'}
+addEventListener('resize',fit);fit();go(0);
+</script>
+</body>
+</html>

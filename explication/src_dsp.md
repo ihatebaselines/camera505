@@ -1,93 +1,70 @@
-# src/dsp — Digital Signal Processing Engines
+# DSP — `src/dsp/*`
 
-> ECG + Audio DSP that shapes every vital before the model sees it.
-
----
-
-## `src/dsp/__init__.py`
-- Re-exports `EcgDspProcessor`, `PanTompkinsDetector`, `calculate_hrv_metrics`, `AudioDspProcessor`, `create_mel_filterbank`, `extract_mel_spectrogram`.
+Procesare semnal real, fără ML: filtrare + detecție vârfuri + HRV + audio.
 
 ---
 
-## `src/dsp/ecg_dsp.py` — ECG Pipeline (302 lines)
+## 1. `src/dsp/ecg_dsp.py` — ECG 250 Hz
 
-### Purpose
-Complete real-time ECG chain at `fs=250 Hz`: **Notch 50 Hz (Q=30, iirnotch)** → **Butterworth bandpass 0.5–40 Hz (order 2)** → **Pan-Tompkins streaming QRS** → **HR / RR / HRV / EDR**. Mirrors math in `docs/ARCHITECTURE.md:18`.
+### 1.1 Filtre (`EcgDspProcessor.__init__` `ecg_dsp.py:102-122`)
+- **Notch 50 Hz Q=30:** `signal.iirnotch(w0=powerline/nyquist, Q=30)` (`:111`). `w0 = f0/(fs/2)`. Dacă `w0` în (0,1) folosește `b,a` + `zi` din `lfilter_zi`; altfel passthrough.
+- **Bandpass 0.5–40 Hz Butterworth ordin 2:** `signal.butter(2, [0.5/nyq, min(40, fs*0.45)/nyq], btype='bandpass')` (`:118-121`). Highcut limitat la `fs*0.45` ca să nu depășească Nyquist la fs mic.
+- Ambele filtre rulează sample-by-sample cu stare `zi` prin `lfilter(b,a,[val],zi=zi)` (`:153-156`) — fără latență de bloc.
 
-### Inputs / Outputs
-- **In:** `process_sample(raw_val:float 0..4095, timestamp_ms:int, leads_off:bool) -> Dict{filtered,is_r_peak,hr,rr_ms,edr_val,edr_resp_rate}`
-  - `leads_off=True` → returns `{filtered:0, hr:0, edr:0}` (never infers HR on detached leads — signal honesty).
-  - Filters use `scipy.signal.lfilter` with persistent `zi` state (sample-by-sample, not block).
-- **Out buffers:** `recent_raw/filtered: deque(10 s)`, `r_peak_timestamps: deque(100)`, `rr_intervals: deque(100)`, `qrs_amplitudes: deque(100)` for EDR.
+### 1.2 Pan-Tompkins (`PanTompkinsDetector` `ecg_dsp.py:17-94`)
+Implementare streaming conform literaturii:
 
-### Key functions / classes
-- **`PanTompkinsDetector(fs=250)`** (`ecg_dsp:17`): 5-point derivative `y[n]=(2x[n]+x[n-1]-x[n-3]-2x[n-4])/8` → square → MWI `W=0.150*fs` → dual adaptive `SPKI=0.125*Peak+0.875*SPKI`, `NPKI` similar, `Threshold_I1=NPKI+0.25*(SPKI-NPKI)`, refractory 200 ms, 0.5 s init stabilization.
-- **`EcgDspProcessor.__init__(fs, powerline_freq=50.0)`** — designs `iirnotch(50/nyquist,Q=30)` + `butter(2,[0.5/nyq,40/nyq],bandpass)` via `scipy.signal`.
-- **`process_sample()`** — notch → bandpass → detector → RR clamping 300–2000 ms (30–200 BPM), exponential HR smoothing `0.7*old+0.3*instant`, QRS amplitude save.
-- **`_update_edr()`** — QRS Amplitude Modulation (RAM) `mod=amp-mean`, RSA via zero-crossings on `diff(RR)` → `resp_rpm=60/(avg_crossing_interval*2)` clamped 6–36, EWMA `0.8*old+0.2*new`.
-- **`calculate_hrv_metrics(rr: List[float]) -> {mean_hr,sdnn,rmssd,pnn50,lf_hf_ratio,sd1,sd2}`** (`ecg_dsp:219`): time-domain `SDNN/RMSSD/pNN50`, Poincaré `SD1=sqrt(RMSSD²/2), SD2=sqrt(2*SDNN²−RMSSD²/2)`, freq-domain Welch on 4 Hz-resampled tachogram → `LF 0.04–0.15 / HF 0.15–0.40 → LF/HF` (fallback 1.5 if <16 RR).
-- **`extract_edr_signal(ecg, fs)`** — offline `butter(3,[0.1,0.5],bandpass)` via `filtfilt` for 6–30 RPM isolation.
-- **`get_hrv_snapshot()`** — live wrapper.
+1. **Derivative 5pct (`:53-55`):** `y[n]=(2x[n]+x[n-1]-x[n-3]-2x[n-4])/8` pe `deque d_x[5]`.
+2. **Square (`:58`):** `y²` — amplifică QRS.
+3. **MWI 150ms (`:60-66`):** media glisantă `window=0.15*fs` (=38 la 250 Hz) cu sumă incrementală `mwi_sum`.
+4. **Threshold adaptiv dual (`:72-92`):**
+   - Inițializare după 0.5s: `SPKI=mwi*2, NPKI=mwi*0.5, thr=NPKI+0.25*(SPKI-NPKI)` (`:72-75`).
+   - Refractar 200ms (`:24,78`): `sample_count - last_r > 0.2*fs`.
+   - Dacă `mwi>thr` → `is_r_peak=True`, `SPKI=0.125*mwi+0.875*SPKI`; altfel `NPKI=0.125*mwi+0.875*NPKI`. Recalculează `thr` identic.
+   - Returnează `(is_r_peak, mwi_val)` (`:94`).
 
-### Dependencies
-`numpy`, `scipy.signal` (iirnotch, butter, lfilter, welch, detrend).
+### 1.3 `process_sample` (`ecg_dsp.py:136-188`)
+- La `leads_off=True` → returnează `filtered=0, hr=0, rr=None, edr=0` (`:140-148`) — nu alimentează filtre/detector.
+- `recent_raw/filtered` dej 10s (`:126-127`), `r_peak_timestamps` + `rr_intervals` + `qrs_amplitudes` dej 100 (`:128-130`).
+- După filtrare (`:152-157`) → Pan-Tompkins → dacă `is_r_peak` calculează `rr = ts - last_ts`, validează 300-2000ms (30-200 BPM), `rr_intervals.append`, `instant_hr=60000/rr`, netezire `hr=0.7*hr+0.3*instant` (`:173`). Apoi `_update_edr()`.
 
-### Demo appearance
-Every HR BPM, HRV RMSSD, respiration RPM, and filtered ECG trace on `life-mobile/app/dashboard` and `dashboard/night` active tiles comes from this module (via `StreamManager._stream_loop`). Night report `mean_rmssd_hrv` and `mean_respiratory_rate` are aggregated `get_hrv_snapshot()` windows. Leads-off → all HR tiles show `—`.
+### 1.4 EDR — ECG-Derived Respiration (`_update_edr` `ecg_dsp.py:190-212`)
+- Necesită ≥8 QRS amplitudini și ≥12 RR (`:195,203`).
+- `edr_val = (amp_last - mean(amps_16)) / (std(amps)+1e-6)` (`:200`).
+- Estimare RPM prin zero-crossing pe `diff(RR_24)`: `avg_crossing_interval * mean(RR)/1000` → `60/(interval*2)`, filtrat EMA `0.8*old+0.2*new` dacă 6-36 RPM (`:206-212`).
 
-### Run
-```bash
-python scripts/test_dsp_and_models.py          # offline block test
-python -c "from src.dsp.ecg_dsp import EcgDspProcessor; p=EcgDspProcessor(); print(p.process_sample(2048,0))"
-```
+### 1.5 HRV (`calculate_hrv_metrics` `ecg_dsp.py:219-290`)
+- Fallback dacă `<4 RR`: `mean_hr 72, sdnn35, rmssd30, pnn50 8, lf_hf 1.5, sd1 21.2, sd2 45.1` (`:229-237`).
+- **SDNN** `std(RR, ddof=1)`, **RMSSD** `sqrt(mean(diff²))`, **pNN50** `% |diff|>50ms`, **Poincaré** `SD1=sqrt(0.5*RMSSD²)`, `SD2=sqrt(2*SDNN² -0.5*RMSSD²)` (`:244-255`).
+- **LF/HF** (`:257-280`): dacă ≥16 RR, resample tachogramă la 4 Hz (`np.interp` pe `cumsum(RR)/1000`), detrend, Welch `fs=4, nperseg=min(len,64)`, integrare `LF 0.04-0.15` / `HF 0.15-0.40`, `ratio=clip(LF/HF,0.1,10)`. Default 1.5 la eroare.
 
----
-
-## `src/dsp/audio_dsp.py` — Audio Pipeline (163 lines)
-
-### Purpose
-Ambient smartphone/mic audio at `fs=16000 Hz` → **128-band Mel spectrogram (50–8000 Hz)** + **3 acoustic detectors**: snore resonance (80–500 Hz), cough explosive transient, respiratory pause. Feeds `StreamManager` and `Transformer AudioPatchEncoder`.
-
-### Inputs / Outputs
-- **In:** `push_audio_chunk(pcm_chunk: np.ndarray float32/int16) -> Dict{energy_db, snore_probability, cough_probability, respiratory_pause, mel_column:List[128]}`
-  - Normalizes int16 `/32768`, maintains `audio_buffer: deque(5 s)`, `recent_mel_frames: deque(300)`.
-- **Out:** `energy_db = 20*log10(RMS)`, dB-adapted `baseline_noise_floor_db` (alpha 0.95/0.999), per-frame `mel_column` clipped `[-80dB→0..1]`, snore/cough probabilities `0..1`.
-
-### Key functions / classes
-- **`hz_to_mel / mel_to_hz`** — `2595*log10(1+f/700)`.
-- **`create_mel_filterbank(n_mels=128, n_fft=512, fs=16000, fmin=50,fmax=8000) -> [128,257]`** — triangular filters via `floor((n_fft+1)*hz/fs)` (`audio_dsp:25`).
-- **`AudioDspProcessor(fs=16000,n_mels=128,n_fft=512,hop=160)`** — 10 ms hop, `hanning(512)`, `recent_rms: deque(50)`, `baseline_noise_floor_db=-55`.
-  - **STFT:** `windowed=rfft(slice*hanning) → spec=|fft|²` → `mel_spec=fb·spec` → `mel_db=10*log10(mel_spec)` → `mel_column=(mel_db+80)/80`.
-  - **Snore:** bins `5:35` (80–500 Hz) ratio `low/high`; trigger `energy > floor+6dB && ratio>3.5` → `clip((ratio-3.5)/10 + (energy-floor)/30)`.
-  - **Cough:** `delta_energy = energy - rms[-5] >12 dB` + broadband `mean(mel 30:100)>1e-3` + `energy>-35dB` → `clip(delta/20)`.
-  - **Pause:** `energy < floor+2dB`.
-- **`extract_mel_spectrogram(pcm, fs, hop) -> [128,n_frames]`** (`audio_dsp:143`) — offline matrix for 30-s windows (`480k` samples → ~3000 frames @ hop 160) used by `StreamManager._process_30s_window`.
-
-### Dependencies
-`numpy`, `scipy.signal`, `collections.deque`.
-
-### Demo appearance
-Acoustic snore % and pause-driven apnea flag on `dashboard/night` active tiles; `MelWaterfall` 80-column waterfall (`life-mobile/components/MelWaterfall.tsx`) draws `mel_column` streamed at 50 Hz alongside ECG, with note about time/frequency correlation. Preset `POST /api/audio/upload_file {preset:snoring}` synthesizes 80–500 Hz rumble + harmonics so Mel visibly lights up low bins; cough preset shows broadband explosion.
-
-### Run
-```bash
-python scripts/test_dsp_and_models.py
-python -c "import numpy as np; from src.dsp.audio_dsp import AudioDspProcessor; a=AudioDspProcessor(); print(a.push_audio_chunk(np.random.randn(320).astype('float32')*0.01))"
-```
+### 1.6 Offline helper
+- `extract_edr_signal` (`ecg_dsp.py:293-302`): bandpass 0.1-0.5 Hz pe fereastră întreagă (6-30 BPM) cu `filtfilt`.
 
 ---
 
-## Cross-DSP contract with `StreamManager`
+## 2. `src/dsp/audio_dsp.py` — audio 16 kHz
 
-```
-StreamManager._stream_loop (50 Hz, dt=0.02):
-  ecg_res = EcgDspProcessor.process_sample(x5 upsampled @4 ms)
-  audio_res = AudioDspProcessor.push_audio_chunk(chunk 320 @16kHz)
-  frame = TelemetryFrame(heart_rate_bpm=ecg_res.hr, respiration_rate_rpm=ecg_res.edr_resp_rate,
-                         snore_probability=audio_res.snore_probability, ...)
-  -- every 7500 ECG samples (≈30 s) --
-  mel_matrix = extract_mel_spectrogram(window_audio_buffer[:480000])
-  → transformer
-```
+### 2.1 Mel filterbank (`create_mel_filterbank` `audio_dsp.py:25-47`)
+- 128 triunghiuri `fmin=50, fmax=8000, n_fft=512` → `mel=2595 log10(1+hz/700)`, `hz=700(10^{mel/2595}-1)` (`:17-22`). Bin `floor((n_fft+1)*hz/fs)`, interpolare lineară între `f_m-1, f_m, f_m+1`.
 
-Sampling constants canonical in `src/backend/config.py:18`: `ECG_SAMPLING_RATE=250`, `AUDIO_SAMPLING_RATE=16000`, `WINDOW_SECONDS=30.0`.
+### 2.2 `AudioDspProcessor` (`audio_dsp.py:50-140`)
+- **Config:** `fs=16k, n_mels=128, n_fft=512, hop=160 (10ms)`, fereastră Hann 512, `audio_buffer deque 5s`, `recent_mel_frames 300`, `recent_rms 50`, `noise_floor -55 dB` (`:51-66`).
+- **`push_audio_chunk` (`:68-140`):** normalize int16→float, append în buffer, `rms=sqrt(mean(chunk²))`, `energy_db=20 log10(rms)`, adaptează `noise_floor` (0.95/0.05 dacă sub, 0.999/0.001 dacă peste).
+  - **Mel col live:** dacă buffer ≥512 → `windowed = slice*Hann`, `spec=|RFFT|²`, `mel=dot(fb,spec)`, `mel_db=10 log10(max(1e-6,mel))`, `mel_column=clip((mel_db+80)/80,0,1)` (`:101-109`).
+  - **Snore (`:111-120`):** `low=mean(mel[5:35])` (80-500 Hz), `high=mean(mel[45:100])`, `ratio=low/(high+1e-6)`. Dacă `energy > floor+6dB` și `ratio>3.5` → `snore=clip((ratio-3.5)/10 + (energy-floor)/30,0,1)` else 0.
+  - **Cough (`:122-128`):** dacă `recent_rms≥5`, `delta=energy - rms[-5]`, `broadband=mean(mel[30:100])`; dacă `delta>12 && broadband>1e-3 && energy>-35` → `cough=clip(delta/20,0,1)`.
+  - **Pause (`:130-132`):** `energy < floor+2dB` → `True`.
+  - Returnează `{energy_db, snore_probability, cough_probability, respiratory_pause, mel_column}`.
+
+### 2.3 `extract_mel_spectrogram` (`audio_dsp.py:143-163`)
+- Offline batch: pad dacă `<n_fft`, `num_frames=1+(len-n_fft)//hop`, loop STFT Hann → `|RFFT|²` → `dot(fb)` → `10 log10` → matrice `128 × n_frames`. Folosit în `StreamManager._process_30s_window` pentru 480k audio / 30s.
+
+---
+
+## 3. Cum se leagă de StreamManager
+
+- `stream_manager.py:224-231` cheamă `ecg_dsp.process_sample` 5× per frame 20ms (250 Hz) și `audio_dsp.push_audio_chunk` 1× per chunk 320 sample-uri (20ms @16k).
+- HRV live din `get_hrv_snapshot()` alimentează `TelemetryFrame.rmssd/sdnn/pnn50/lf_hf/stress` la 50 Hz (`stream_manager.py:237-275`).
+- Audio live alimentează `TelemetryFrame.snore/cough/pause/energy_db` + `mel_column` către WS.
+

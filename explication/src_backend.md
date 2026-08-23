@@ -1,102 +1,132 @@
-# src/backend & src/storage & src/training & src/datasets — API, Persistence, Training
+# Backend — `src/backend/*` + `src/storage/*`
+
+FastAPI gateway-ul leagă StreamManager, DB, WS și AI. Totul pe :8000.
 
 ---
 
-## `src/backend/config.py` (21 lines)
-- **Purpose:** Single source of truth for paths/ports/sampling constants.
-- **Exports:** `BASE_DIR` (project root), `DATA_DIR` (`data/`), `DB_PATH` (`data/life_signals.db`), `STATIC_UI_DIR` (`ui/`), `HOST 0.0.0.0`, `PORT 8000`, `ECG_SAMPLING_RATE 250`, `AUDIO_SAMPLING_RATE 16000`, `POWERLINE_FREQ 50.0` (Romania), `WINDOW_SECONDS 30.0`.
-- **Run:** `python -c "import src.backend.config; print(src.backend.config.DB_PATH)"`
+## 1. `src/backend/app.py` — 870 linii, toate rutele
+
+### 1.1 Lifespan & globale (`app.py:32-66`)
+- `db = LifeDatabase(DB_PATH)` + `stream_manager = StreamManager(db)` + `continual_engine = ContinualLearningEngine()` (`:32-36`).
+- `lifespan:40-58` — la startup scanează `list_available_com_ports()` → dacă `COM3` există alege `source=serial` altfel `synthetic`, `start_session(user_id="demo_user", mode="dual", source_type, com_port)`; la shutdown `stop_session()`.
+- `app = FastAPI(title="LIFE...", version="2.0.0", lifespan=lifespan)` (`:61-66`), CORS `allow_origins=["*"]` (`:69-75`).
+
+### 1.2 REST — status & surse
+
+| Metodă | Rută | Funcție | Ce face |
+|---|---|---|---|
+| GET | `/api/status` | `get_system_status:80` | `{status, session_active, current_session, source_type, mode, available_com_ports}` |
+| GET | `/api/com_ports` | `get_com_ports:93` | `{ports:[device], details:raw}` din `serial_stream` |
+| GET | `/api/com-ports` | alias `854` | legacy, aceleași date |
+| GET | `/api/wifi/status` | `get_wifi_status:104` | probe bind UDP `0.0.0.0:3334` (main e 3333) → `{wifi_available, esp32_detected, udp_port, message}` |
+| GET | `/api/network_info` | `get_network_info:407` | `socket.getaddrinfo` + fallback `8.8.8.8:80` → `{primary_ip, all_ips, mobile_url:6767, backend_url:8000, qr_pairing_code:"LIFE-XXX"}` |
+| GET | `/api/ai/status` | `get_ai_status:288` | `is_ollama_installed/running/get_available_model` |
+
+### 1.3 REST — sesiuni
+
+| Metodă | Rută | Detalii |
+|---|---|---|
+| POST | `/api/session/start` | `start_monitoring_session:133` body `SessionCreate{user_id,mode,source_type,com_port,baud_rate}` → `stream_manager.start_session` → `{status:"started", session}` |
+| POST | `/api/session/stop` | `stop_monitoring_session:146` — vedetă: generează raport night complet (vezi §1.4) |
+| GET | `/api/session/current` | `get_current_session_info:317` → `{is_running, session, latest_telemetry, latest_token, hrv_metrics, baseline}` |
+| GET | `/api/session/history` | `get_session_history:302` cu `?user_id&limit` |
+| GET | `/api/history/sessions` | `list_past_sessions:357` → `db.list_sessions(limit)` |
+| GET | `/api/history/tokens/{session_id}` | `get_session_tokens:363` → `db.get_window_tokens` |
+| GET | `/api/history/anomalies/{session_id}` | `get_session_anomalies:369` → `db.get_session_anomalies` |
+| GET | `/api/history/summary/{session_id}` | `get_session_night_summary:376` → `db.get_night_summary` 404 dacă lipsă |
+| POST | `/api/scenario` | `set_scenario:330` body `{scenario}` → `SimulationScenario(enum)` + `stream_manager.set_simulation_scenario`; 400 dacă invalid |
+
+### 1.4 `POST /api/session/stop` în detaliu (`app.py:146-256`)
+1. Salvează `active_session_id/user_id`, `summary=stream_manager.stop_session()` + `anomalies=db.get_session_anomalies` + `tokens=db.get_window_tokens` (`:149-155`).
+2. **Sleep stages** (`:157-173`): `awake=t.anomaly>0.4||hr>85`, `deep=rmssd>45 && hr<65`, `rem=30<=rmssd<=45 && anomaly<0.25`, rest light; apoi normalizează la 100% clamp-uri 5/15/40/18.
+3. **Summary fallback** dacă DB gol (`:175-190`): `6.8min, HR73.5, RMSSD38.4, Resp15.1, AHI2.4, ...`.
+4. `calc_stability = max(50, 100 - risk_score*0.9)`, `ahi_status` Normal/Mild/Moderate (`:193-195`).
+5. **Continual adapt** (`:198-207`): `continual_engine.adapt_after_session(user_id, mins, hr, resp, rmssd, stability, ahi, #anomalies)`.
+6. **Foundation fine-tune** (`:210-227`): `UserFoundationModelManager(user_id)`; construiește `session_windows` din tokens (`resp=mean_resp_rate, motion=drift_score, audio=anomaly_score` — 64/48/128), `fine_tune_on_session(3 epoci)` dacă ≥4 windows else `insufficient_windows`.
+7. **Acoustic analytics** (`:230`): `stream_manager.compute_acoustic_analytics()` → `{snore_burden_index, cough_count, avg_noise_db, noise_hr_correlation}`.
+8. Returnează `report_payload:232-254` cu 13 chei + `ai_diagnostic_synthesis` text.
+
+### 1.5 Audio
+
+| Metodă | Rută | Funcție |
+|---|---|---|
+| POST | `/api/audio/chunk` | `receive_microphone_chunk:384` `{pcm:[]}` → `stream_manager.push_external_audio` |
+| POST | `/api/audio/upload_chunk` | `upload_audio_chunk:694` alias `{samples/pcm}` → `audio_dsp.push_audio_chunk` + `push_external_audio` |
+| POST | `/api/audio/upload_file` | `upload_audio_file:708` — preset `snoring/cough/normal` sintetizează 5s @16k (snoring 110+220+330 Hz envelope 0.3Hz; cough bursts la 1.2/2.8/4.0s), sau raw `samples`; chunk 3200 (200ms) prin `audio_dsp` + `push_external_audio`; return `{avg_snore, max_cough, classification, acoustic_verdict}` |
+
+### 1.6 AI & Quiz
+
+| Metodă | Rută |
+|---|---|
+| POST | `/api/ai/report` | `generate_ai_report:259` — `ensure_ollama_ready()` + `generate_sleep_report(data,user_profile,model)`; fallback json la eroare |
+| GET | `/api/quiz/personas` | `get_demo_personas:441` → `DEMO_PERSONAS` din `health_quiz_cohort` |
+| POST | `/api/quiz/evaluate` | `evaluate_quiz:447` — `CatBoostCohortClassifier(userName).predict_cohort` + `continual_engine.initialize_user_baseline` → `{matchedCohort{cohortKey, cohortName, apneaRiskPrior, thresholdOffsetTheta, temperatureTau, expectedHr/Resp}, catboost_details}` |
+| GET | `/api/user/model_status/{user_id}` | `get_user_model_status:484` — verif `respiratory_foundation_model.pt` + `catboost_classifier.cbm` size KB + `total_sessions/cumulative_hours/theta` |
+| GET | `/api/user/trajectory/{user_id}` | `get_user_learning_trajectory:633` → `continual_engine.get_trajectory` |
+| POST | `/api/user/initialize_baseline` | `initialize_user_baseline_endpoint:649` |
+| GET | `/api/federated/cohort_stats` | `get_federated_cohort_stats:659` — vezi §3 |
+
+### 1.7 Adaptive / Training
+
+| Rută | Funcție |
+|---|---|
+| GET `/api/adaptive/cohorts` | `list_all_cohort_baselines:511` → `COHORT_PROFILES` (12, 206318 h) |
+| GET `/api/adaptive/thresholds?cohort=` | `get_adaptive_thresholds:522` → `threshold_offset/temperature/weights/typical_hr/resp` |
+| GET `/api/adaptive/response_curve?cohort&theta_override&tau_override` | `get_soft_sigmoid_response_curve:539` — `P=1/(1+exp(-(score-theta)/tau))` 40 pct |
+| POST `/api/adaptive/custom_cohort` | `create_or_update_custom_cohort:561` — scrie în `COHORT_PROFILES` |
+| POST `/api/training/train_catboost_esrs` | `train_catboost_esrs_endpoint:580` |
+| GET `/api/training/esrs_metrics` | `get_esrs_metrics_endpoint:594` → `foundation_models/catboost_metrics.json` |
+| POST `/api/training/run_parallel` | `trigger_parallel_training:608` `?epochs=20` → `run_parallel_cohort_training` |
+| GET `/api/training/benchmark_results` | `get_latest_benchmark_results:619` |
+| GET `/api/benchmarks/run` | `run_automated_benchmarks:394` → `run_life_benchmarks(3)` |
+| GET `/api/launch-ecg-studio` | `launch_ecg_studio:831` — `Popen([sys.executable, scripts/desktop_ecg_plotter.py], CREATE_NEW_CONSOLE)` |
+
+### 1.8 WebSocket (`app.py:791-828`)
+- `@app.websocket("/ws/live")` + alias `/ws/session`. `await accept`, `queue=asyncio.Queue(50)`, `stream_manager.subscribers.append(queue)`.
+- Loop: `try receive_text timeout 0.001s` → dacă `action=="change_scenario"` → `set_simulation_scenario`; `await queue.get()` → `send_json`. Pe `WebSocketDisconnect` curăță `subscribers.remove`.
+
+### 1.9 Static
+- Dacă `STATIC_UI_DIR` există → `mount("/static", StaticFiles)` (`:865`), `GET /` → `index.html` (`:868`).
 
 ---
 
-## `src/backend/app.py` — FastAPI Gateway & WebSocket Server (828 lines)
+## 2. `src/storage/database.py` — 6 tabele WAL
 
-### Purpose
-The single HTTP+WebSocket entrypoint for the whole platform: REST session/audio/quiz/baseline/training/ai endpoints + high-rate `ws://…/ws/live` telemetry broadcast. Creates `LifeDatabase`, `StreamManager`, `ContinualLearningEngine` singletons and wires `lifespan` auto-session.
+**Conexiune (`database.py:33-39`):** `sqlite3.connect(check_same_thread=False)`, `row_factory=Row`, `PRAGMA journal_mode=WAL` + `synchronous=NORMAL`.
 
-### Lifespan
-`lifespan()` on startup probes `list_available_com_ports()` → if `COM3` present `source_type=serial` else `synthetic`, `mode=dual`, calls `stream_manager.start_session(user_id="demo_user", ...)` so UI has data immediately before any POST.
+**Schema (`_init_db:41-154`):**
 
-### REST — core
-- `GET /api/status` — `{status, session_active, current_session, source_type, mode, available_com_ports}`.
-- `GET /api/com_ports` (also duplicate `GET /api/com-ports` alias) — `{ports:[device], details:[{device,description,hwid}]}`.
-- `GET /api/wifi/status` — socket probe on `0.0.0.0:3334` (3333 is listener, so probe 3334 avoids conflict) → `{wifi_available, esp32_detected, udp_port, message}`.
-- `POST /api/session/start {user_id, mode, source_type, com_port, baud_rate}` → `SessionCreate` → `stream_manager.start_session`.
-- `POST /api/session/stop` — closes session, collects tokens/anomalies, synthesizes sleep stages (HR>85/anomaly>0.4→awake, RMSSD>45&HR<65→deep, else rem/light), builds `summary` (fallback defaults if no tokens), computes `calc_stability=100−risk*0.9`, calls `ContinualLearningEngine.adapt_after_session` + `UserFoundationModelManager.fine_tune_on_session` (real windows → `resp[64],motion[48],audio[128]` or `insufficient_windows`), returns `{status, summary, respiratory_stability_score, estimated_ahi, ahi_classification, sleep_stages, suspected_events, adapted_user_baseline, foundation_model_fine_tuning, ai_diagnostic_synthesis}`.
-- `GET /api/session/current` — `{is_running, session, latest_telemetry, latest_token, hrv_metrics, baseline}` (polled by `scripts/test_live_samples.py`).
-- `POST /api/scenario {scenario}` — switches `SimulationScenario` (healthy_rest/apnea/arrhythmia/cough/snoring/leads_off).
-- `POST /api/audio/chunk` (legacy) / `POST /api/audio/upload_chunk {samples/pcm}` / `POST /api/audio/upload_file {samples/preset,duration_sec}` — ingests phone mic PCM → `audio_dsp.push_audio_chunk` + `push_external_audio`; file endpoint synthesizes preset presets (snoring harmonics 110/220/330 Hz, cough bursts at 1.2/2.8/4.0 s, normal pink envelope) then chunk-feeds and classifies.
-- `GET /api/network_info` — LAN IPs + `mobile_url http://{primary_ip}:6767` + `qr_pairing_code LIFE-XXX`.
-- `GET/POST /api/user/*` — profile, `model_status/{user_id}` (exists/size/catboost/sessions/theta), `trajectory/{user_id}`, `initialize_baseline`.
-- `GET /api/adaptive/*` — `cohorts`, `thresholds?cohort=`, `response_curve`, `POST custom_cohort`.
-- `GET/POST /api/training/*` — `train_catboost_esrs` (10k rows MultiClass Softmax → `foundation_models/`), `esrs_metrics`, `run_parallel` (Soft-F1 multi-core), `benchmark_results`.
-- `GET /api/benchmarks/run`, `GET /api/quiz/personas + POST /api/quiz/evaluate` (CatBoost), `GET /api/session/history`, `/api/baseline` & `reset`.
+| Tabel | Coloane cheie | Index |
+|---|---|---|
+| `sessions` | `id PK, user_id, start_time, end_time, mode, source_type, status` | — |
+| `telemetry_chunks` | `id, session_id FK, start_ts_ms, end_ts_ms, sample_count, raw_data_json` | — |
+| `window_tokens` | `id, session_id FK, window_idx, start/end_ts, mean_hr, sdnn, rmssd, pnn50, lf_hf_ratio, mean_resp_rate, stability, reconstruction_error, prediction_error, drift_score, anomaly_score, is_suspect_episode, suspect_reasons(JSON), embedding_512(JSON)` | `idx_tokens_session(session_id,window_idx)` |
+| `anomaly_events` | `id, session_id FK, timestamp_ms, event_type, severity, duration_sec, description, metrics_snapshot(JSON)` | `idx_anomalies_session(session_id,timestamp_ms)` |
+| `night_summaries` | `session_id PK FK, user_id, date_str, duration, mean/min/max_hr, mean_rmssd, mean_resp, apnea_screening_index, snoring_minutes, cough_count, risk_score, risk_level, stability_grade, disclaimer` | — |
+| `user_baselines` | `user_id PK, hr_mean/std, rmssd_mean/std, resp_mean/std, night_count, recent_night_embeddings(JSON), last_updated` | — |
 
-### REST — AI
-- `POST /api/ai/report {summary, estimated_ahi, respiratory_stability_score, sleep_stages, user_profile}` → `ollama_engine.generate_sleep_report` streaming `mdl or fallback` → `{status:ok/fallback, ai_report, model_used}`. Fallback always returns populated dict.
-- `GET /api/ai/status` → `{ollama_installed, ollama_running, available_model, status:ready/unavailable}`.
+**API:**
+- `create_session/close_session/get_session/list_sessions` (`:157-186`).
+- `save_telemetry_chunk(session_id, frames:TelemetryFrame[])` (`:189-200`): `json.dumps([f.model_dump()])`.
+- `save_window_token/get_window_tokens` (`:203-234`): `is_suspect 0/1`, `suspect_reasons/embedding` JSON.
+- `record_anomaly_event/get_session_anomalies` (`:237-257`).
+- `get_user_baseline/save_user_baseline` (`:260-309`): upsert `ON CONFLICT(user_id) DO UPDATE`, creează default `UserBaselineRecord` dacă absent.
+- `save_night_summary/get_night_summary` (`:312-336`): `INSERT OR REPLACE`.
 
-### WebSocket
-- `@app.websocket("/ws/live")` alias `/ws/session` → `websocket_live_stream()` — accepts, pushes per-client `asyncio.Queue(maxsize=50)`, appends to `stream_manager.subscribers`, loop: non-blocking `receive_text` for `{action:change_scenario}`, `await queue.get()` → `send_json(telemetry_payload)`. Disconnect cleanup. Emits ~30–50 fps: `{type:telemetry, source_type, is_simulated, data:TelemetryFrame, mel_column[128], baseline{hr_mean,rmssd_mean,resp_mean}, latest_token}`. Queue drop policy `qsize<20` avoids lag.
-
-### Static
-If `STATIC_UI_DIR` exists mounts `/static` and `GET /` → `index.html`.
-
-### Run
-```bash
-uvicorn src.backend.app:app --host 0.0.0.0 --port 8000 --reload
-python scripts/run_server.py
-python scripts/start_all.py
-curl http://localhost:8000/docs
-```
+**Modele Pydantic (`src/storage/models.py`):** `SessionRecord, TelemetryFrame, WindowToken30s, AnomalyEventRecord, UserBaselineRecord, NightReportSummary`. DB le serializează via `model_dump()`.
 
 ---
 
-## `src/storage/database.py:LifeDatabase` (336 lines)
+## 3. Broadcast & federated (detalii fina)
 
-### Purpose
-SQLite with **WAL + NORMAL** for concurrent 50 Hz ingestion. 6 tables + indexes. File `data/life_signals.db` (auto-created). Used by `StreamManager` + all `GET /api/history/*`.
-
-### Schema (from `_init_db:42`)
-- `sessions(id PK, user_id, start_time, end_time, mode, source_type, status)` — `create_session`, `close_session`, `get_session`, `list_sessions`.
-- `telemetry_chunks(id, session_id FK, start_ts_ms, end_ts_ms, sample_count, raw_data_json)` — batched `TelemetryFrame` list, flushed every 5 s (`save_telemetry_chunk`).
-- `window_tokens(id, session_id, window_idx, start_ts_ms, end_ts_ms, mean_hr, sdnn, rmssd, pnn50, lf_hf_ratio, mean_resp_rate, stability_score, reconstruction_error, prediction_error, drift_score, anomaly_score, is_suspect_episode, suspect_reasons JSON, embedding_512 JSON)` — `save_window_token`, `get_window_tokens` (idx `session,window_idx`).
-- `anomaly_events(id, session_id, timestamp_ms, event_type, severity HIGH/MEDIUM, duration_sec, description, metrics_snapshot JSON)` — `record_anomaly_event`, `get_session_anomalies`.
-- `night_summaries(session_id PK, user_id, date_str, total_duration_minutes, mean/max/min heart, mean_rmssd, mean_resp, apnea_screening_index, total_snoring_minutes, total_cough_count, multimodal_risk_score, risk_level, stability_grade, clinical_disclaimer)` — `save_night_summary`, `get_night_summary`.
-- `user_baselines(user_id PK, baseline_hr_mean/std, baseline_rmssd_mean/std, baseline_resp_mean/std, night_count, recent_night_embeddings JSON, last_updated)` — `get_user_baseline` (auto-creates `UserBaselineRecord` defaults 72±8/42±10/15±2), `save_user_baseline` via `ON CONFLICT UPDATE`.
-
-### Run
-```bash
-python -c "from src.storage.database import LifeDatabase; db=LifeDatabase(':memory:'); print(db.list_sessions())"
-sqlite3 data/life_signals.db "SELECT id,status FROM sessions ORDER BY start_time DESC LIMIT 5;"
-```
+- **`StreamManager._broadcast_telemetry` (`stream_manager.py:514`)** chemat la 50 Hz; payload include `mel_column` pentru `MelWaterfall` + `baseline` (hr/rmssd/resp mean) pentru radar + `latest_token` pentru AHI live.
+- **`GET /api/federated/cohort_stats` (`app.py:659-691`):** scanează `local_user/*/model/personal_history.json` (creat de `continual_learning_engine`), agregă `{cohorts: {cohort_key:{users:int, avg_theta:round(mean(theta_offset),4)}}}` — fără date fiziologice brute. Fallback `{"cohorts":{}}` la eroare.
 
 ---
 
-## `src/storage/models.py` — Pydantic Schemas (112 lines)
-`SessionCreate`, `SessionRecord{id,user_id,start_time,end_time,mode,source_type,status}`, `TelemetryFrame{timestamp_ms,raw_ecg,filtered_ecg,is_r_peak,heart_rate_bpm,rr_interval_ms,leads_off,edr_respiration_val,respiration_rate_rpm,audio_energy_db,snore_probability,cough_probability,respiratory_pause_flag,anomaly_score}`, `WindowToken30s{session_id,window_idx,start/end_ts_ms,mean_hr,sdnn,rmssd,pnn50,lf_hf_ratio,mean_resp_rate,stability_score,reconstruction_error,prediction_error,drift_score,anomaly_score,is_suspect_episode,suspect_reasons,embedding_512[512]}`, `AnomalyEventRecord`, `UserBaselineRecord{baseline_hr_mean 72,std 8,...}`, `NightReportSummary{...risk_level,stability_grade,clinical_disclaimer}`. All `.model_dump()` → JSON over WS/REST.
+## 4. Alte module legate
 
-## `src/storage/duckdb_analytics.py`
-- **Purpose:** DuckDB columnar analytics on top of SQLite — fast cohort stats, histogram, trend queries over `window_tokens` for `docs/continual_adaptive_architecture.md`.
-- **Run:** `python -c "import src.storage.duckdb_analytics; help(src.storage.duckdb_analytics)"`
+- `src/storage/duckdb_analytics.py` — query-uri OLAP pe chunks (opțional, nu expus direct).
+- `src/training/*` — apelate via `/api/training/*` (vezi `src_ingestion.md` pentru pipeline master).
+- `src/datasets/*` — loaders BIDMC/PSG + `benchmark_runner.py` pentru `/api/benchmarks/run`.
 
----
-
-## `src/training/*`
-
-### `src/training/train_esrs_catboost.py`
-- **Purpose:** Trains **CatBoost MultiClass Softmax** on `data/catboost_esrs_dataset.csv` (10k rows) → `foundation_models/catboost_esrs_classifier.cbm` + `catboost_metrics.json` (accuracy/confusion). Triggered by `POST /api/training/train_catboost_esrs` and `scripts/train_all_pipeline.py`.
-- **Run:** `python -m src.training.train_esrs_catboost`  or  `curl -X POST http://localhost:8000/api/training/train_catboost_esrs`
-
-### `src/training/parallel_cohort_trainer.py`
-- **Purpose:** Multi-core parallel training over **12 cohort baselines** optimizing `DifferentiableSoftF1Loss` (differentiable threshold) → saves `checkpoints/trained_cohorts.json`. Endpoints `POST /api/training/run_parallel?epochs=20` and `GET /api/training/benchmark_results` (lazy-runs 15 epochs if missing).
-- **Run:** `curl -X POST "http://localhost:8000/api/training/run_parallel?epochs=20"`
-
----
-
-## `src/datasets/*` & `src/data/*`
-
-- **`src/datasets/dataset_catalog.py`**, **`bidmc_loader.py`**, **`psg_audio_loader.py`** — PhysioNet dataset registry & loaders (BIDMC PPG/ECG, PSG audio) with caching in `src/data/physionet_cache/dataset_catalog.json`.
-- **`src/datasets/benchmark_runner.py:run_life_benchmarks(num_epochs=3)`** — runs DSP/Transformer/Baseline benchmarks; exposed at `GET /api/benchmarks/run`.
-- **`src/data/generate_esrs_dataset.py`** — generates synthetic ESRS cohort CSV deterministically (`catboost_info/*` tfevents + metrics derive from it).
-- **Run:** `python scripts/test_dsp_and_models.py` (uses synthetic fallback if datasets absent); `curl http://localhost:8000/api/benchmarks/run`

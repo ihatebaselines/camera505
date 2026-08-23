@@ -152,6 +152,8 @@ def generate_sleep_report(
       - recommendation: single key action item
       - mood_forecast: predicted next-day energy level
       - signature_message: unique poetic sign-off message
+      - alert_explanations: (optional) why each live alert fired, only when
+        session_data contains "alert_events" [{time, message}, ...]
     """
     if model is None:
         model = get_available_model()
@@ -171,10 +173,27 @@ def generate_sleep_report(
     cohort = user_profile.get("cohort", {}).get("name", "Healthy Adult") if user_profile else "Healthy Adult"
     user_name = user_profile.get("name", "the user") if user_profile else "the user"
 
+    # Optional live alert events -> model must explain WHY each top alert fired
+    alert_events = session_data.get("alert_events") or []
+    top_alerts = []
+    if isinstance(alert_events, list):
+        top_alerts = [a for a in alert_events if isinstance(a, dict) and a.get("message")][:3]
+    if top_alerts:
+        alert_list = "; ".join(f"[{a.get('time', '?')}] {a.get('message', '')}" for a in top_alerts)
+        alert_block = f"""
+Live alert events fired this session (top {len(top_alerts)}): {alert_list}
+For EACH alert above, explain WHY it fired by causally linking the alert message to this night's metrics (e.g. "bradycardia 54 BPM co-occurring with a respiratory pause inside a 3-s window = obstruction pattern", "HR {hr:.0f} BPM vs cohort norm", "anomaly burden vs AHI {ahi:.1f}").
+"""
+        alert_json_key = """,
+  "alert_explanations": ["one line per alert above: [time] + causal explanation citing the numbers"]"""
+    else:
+        alert_block = ""
+        alert_json_key = ""
+
     prompt = f"""You are a clinical sleep AI for CAMERA 505. Write a UNIQUE, personalized report. Vary phrasing every time — never repeat the same sentences.
 
 Patient: {user_name} | Cohort: {cohort}
-Data: {duration:.0f} min ({duration/60:.1f}h), HR {hr:.1f} BPM, HRV {hrv:.1f} ms, Resp {resp:.1f} RPM, Stability {stability}/100, AHI {ahi:.1f}/h, Sleep Deep {stages.get('deep_pct', 20)}%/REM {stages.get('rem_pct', 25)}%/Light {stages.get('light_pct', 47)}%/Awake {stages.get('awake_pct', 8)}%, Events {events}
+Data: {duration:.0f} min ({duration/60:.1f}h), HR {hr:.1f} BPM, HRV {hrv:.1f} ms, Resp {resp:.1f} RPM, Stability {stability}/100, AHI {ahi:.1f}/h, Sleep Deep {stages.get('deep_pct', 20)}%/REM {stages.get('rem_pct', 25)}%/Light {stages.get('light_pct', 47)}%/Awake {stages.get('awake_pct', 8)}%, Events {events}{alert_block}
 
 Return ONLY valid JSON with exact keys:
 {{
@@ -183,7 +202,7 @@ Return ONLY valid JSON with exact keys:
   "recovery_score": <int 0-100>,
   "recommendation": "One specific actionable tip for tomorrow night",
   "mood_forecast": "1-2 sentences next-day energy forecast",
-  "signature_message": "One short poetic sign-off, never the same twice"
+  "signature_message": "One short poetic sign-off, never the same twice"{alert_json_key}
 }}"""
 
     try:
@@ -208,6 +227,12 @@ Return ONLY valid JSON with exact keys:
             # Ensure types are correct
             if isinstance(parsed.get("insights"), str):
                 parsed["insights"] = [parsed["insights"]]
+            # alert_explanations is optional — normalize but never fail validation
+            if "alert_explanations" in parsed:
+                if isinstance(parsed["alert_explanations"], str):
+                    parsed["alert_explanations"] = [parsed["alert_explanations"]]
+                if not isinstance(parsed["alert_explanations"], list):
+                    del parsed["alert_explanations"]
             return parsed
         print(f"[CAMERA 505 AI] Ollama returned invalid JSON, using fallback. Raw: {text[:300]}")
         return _fallback_report(session_data)
@@ -285,4 +310,30 @@ def _fallback_report(session_data: dict) -> dict:
         "recommendation": recommendations[seed % len(recommendations)],
         "mood_forecast": moods[seed % len(moods)],
         "signature_message": signatures[seed % len(signatures)],
+        "alert_explanations": _fallback_alert_explanations(session_data, ahi, stability, hr),
     }
+
+
+def _fallback_alert_explanations(session_data: dict, ahi: float, stability: float, hr: float) -> list:
+    """Deterministic rule-based WHY explanations for top 3 live alerts (empty list if none)."""
+    alert_events = session_data.get("alert_events") or []
+    if not isinstance(alert_events, list):
+        return []
+    out = []
+    for a in alert_events:
+        if not isinstance(a, dict) or not a.get("message"):
+            continue
+        msg = str(a.get("message", "")).lower()
+        time_s = str(a.get("time", "?"))
+        if "pause" in msg or "bradycardia" in msg or "obstructive" in msg:
+            why = f"bradycardia + respiratory pause co-occurrence = obstruction pattern (HR {hr:.0f} BPM, AHI {ahi:.1f}/h)"
+        elif "anomaly" in msg:
+            why = f"window anomaly burden pushed composite score past theta vs stability {stability:.0f}/100"
+        elif "range" in msg or "heart rate" in msg:
+            why = f"HR excursion outside personal Gaussian band (mean {hr:.0f} BPM)"
+        else:
+            why = f"signal deviation vs personal baseline (stability {stability:.0f}/100, AHI {ahi:.1f}/h)"
+        out.append(f"[{time_s}] {a.get('message')} — {why}")
+        if len(out) >= 3:
+            break
+    return out

@@ -78,6 +78,17 @@ class StreamManager:
         self.db_telemetry_batch = []
         self.last_db_flush = time.time()
 
+        # Acoustic analytics running counters (per session, reset in start_session)
+        self.session_snore_events = 0
+        self.session_cough_events = 0
+        self.session_noise_db_history: List[float] = []
+        self.session_hr_history: List[float] = []
+        self.session_start_ts = time.time()
+        self._prev_snore_prob = 0.0
+        self._last_snore_event_ts = 0.0
+        self._last_cough_event_ts = 0.0
+        self._last_noise_sample_ts = 0.0
+
     def start_session(
         self,
         user_id: str = "user_default",
@@ -116,6 +127,17 @@ class StreamManager:
             self.window_start_ts = int(time.time() * 1000)
             self.window_index = 0
             self.db_telemetry_batch.clear()
+
+            # Reset acoustic analytics counters for the new session
+            self.session_snore_events = 0
+            self.session_cough_events = 0
+            self.session_noise_db_history = []
+            self.session_hr_history = []
+            self.session_start_ts = time.time()
+            self._prev_snore_prob = 0.0
+            self._last_snore_event_ts = 0.0
+            self._last_cough_event_ts = 0.0
+            self._last_noise_sample_ts = time.time()
             
             # Both 'serial' and 'hardware' source types use SerialEcgReader;
             # 'hardware' is accepted as a legacy alias for backwards compatibility.
@@ -254,6 +276,7 @@ class StreamManager:
             )
             self.latest_telemetry = frame
             self.db_telemetry_batch.append(frame)
+            self._update_acoustic_counters(frame)
             
             # Flush telemetry to DB every 5 seconds
             if time.time() - self.last_db_flush > 5.0:
@@ -428,11 +451,65 @@ class StreamManager:
             mean_respiratory_rate=round(float(np.mean(resps)), 1) if resps else 15.0,
             apnea_screening_index=risk_res["apnea_screening_index"],
             total_snoring_minutes=round(suspects * 0.2, 1),
-            total_cough_count=0,
+            total_cough_count=self.session_cough_events,
             multimodal_risk_score=risk_res["multimodal_risk_score"],
             risk_level=risk_res["risk_level"],
             stability_grade=risk_res["stability_grade"]
         )
+
+    def _update_acoustic_counters(self, frame: TelemetryFrame):
+        """Tracks cooldown-gated snore/cough events and a 5s-cadence noise/HR history for acoustic analytics."""
+        now = time.time()
+
+        # Snore event: snore_probability crosses 0.5 upward, 30s cooldown
+        snore_prob = float(frame.snore_probability)
+        if snore_prob > 0.5 and self._prev_snore_prob <= 0.5 and (now - self._last_snore_event_ts) >= 30.0:
+            self.session_snore_events += 1
+            self._last_snore_event_ts = now
+        self._prev_snore_prob = snore_prob
+
+        # Cough event: cough_probability > 0.5, 10s cooldown
+        if float(frame.cough_probability) > 0.5 and (now - self._last_cough_event_ts) >= 10.0:
+            self.session_cough_events += 1
+            self._last_cough_event_ts = now
+
+        # Ambient noise / HR sampling every 5s (capped at 2000 samples each)
+        if now - self._last_noise_sample_ts >= 5.0:
+            self.session_noise_db_history.append(float(frame.audio_energy_db))
+            self.session_hr_history.append(float(frame.heart_rate_bpm))
+            if len(self.session_noise_db_history) > 2000:
+                del self.session_noise_db_history[:-2000]
+                del self.session_hr_history[:-2000]
+            self._last_noise_sample_ts = now
+
+    def compute_acoustic_analytics(self) -> Dict[str, Any]:
+        """Derives Snore Burden Index, cough count, avg noise dB and noise-HR Pearson correlation."""
+        duration_hrs = max((time.time() - self.session_start_ts) / 3600.0, 1.0 / 60.0)
+        snore_burden_index = round(self.session_snore_events / duration_hrs, 1)
+
+        avg_noise_db = 0.0
+        noise_hr_correlation = 0.0
+        if self.session_noise_db_history:
+            avg_noise_db = round(float(np.mean(self.session_noise_db_history)), 1)
+
+            # Pearson correlation between noise dB and HR over aligned 5s samples (valid HR only)
+            pairs = [
+                (n, h) for n, h in zip(self.session_noise_db_history, self.session_hr_history) if h > 0
+            ]
+            if len(pairs) >= 3:
+                noise_arr = np.array([p[0] for p in pairs], dtype=np.float64)
+                hr_arr = np.array([p[1] for p in pairs], dtype=np.float64)
+                if noise_arr.std() > 1e-9 and hr_arr.std() > 1e-9:
+                    corr = float(np.corrcoef(noise_arr, hr_arr)[0, 1])
+                    if np.isfinite(corr):
+                        noise_hr_correlation = round(corr, 2)
+
+        return {
+            "snore_burden_index": snore_burden_index,
+            "cough_count": self.session_cough_events,
+            "avg_noise_db": avg_noise_db,
+            "noise_hr_correlation": noise_hr_correlation,
+        }
 
     def _broadcast_telemetry(self, frame: TelemetryFrame, mel_col: Optional[List[float]]):
         """Sends data payload to WebSocket subscriber queues."""

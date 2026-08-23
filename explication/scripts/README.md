@@ -1,135 +1,31 @@
-# scripts/ — All Runners, Diagnostics & Training Helpers
+# Scripts — `scripts/*`
 
-> Every file under `scripts/` — purpose, I/O, key functions, deps, demo role, one-liner.
+Toate scripturile sunt rulate din root (`python scripts/<nume>.py` sau `.bat`). Tabel complet cu scop, I/O, comandă și poziție în demo/pitch.
 
----
+| Nume | Scop (1 frază) | Intrări / Ieșiri | Comandă rulare | Unde apare în demo / pitch |
+|---|---|---|---|---|
+| **start_all.py** | Orchestrator master: pornește backend :8000 + frontend :6767 + Ollama probe + auto-open browser. | IN: `life-mobile/` existent, `src/storage/database.py`; OUT: 2 procese + browser `http://localhost:6767` | `python scripts/start_all.py` sau `START_CAMERA_505.bat` | **Slide 1 & RUN**: launcher principal juriu; pitch "one-shot" |
+| **start_camera505_full.bat** | Variantă .bat cu `init_db.py` + `start_all.py` + wait 6s + open `http://localhost:6767`. | IN: —; OUT: consolă `CAMERA 505 Backend` | `scripts\start_camera505_full.bat` (dublu click) | Alternativă la `START_CAMERA_505.bat` (demo tabel slide 12) |
+| **run_server.py** | Launcher simplu doar FastAPI (fără frontend). | IN: `src/backend/config.py HOST/PORT`; OUT: uvicorn :8000 | `python scripts/run_server.py` | Debug backend izolat; fallback dacă `start_all.py` e prea mult |
+| **desktop_ecg_plotter.py** | Osciloscop desktop Tk 60 FPS + FFT, mirror al `EcgStudioOverlay`. | IN: COM port (default COM5) sau simulator 50 Hz; OUT: fereastră Tk 1280×820 | `python scripts/desktop_ecg_plotter.py` sau `GET /api/launch-ecg-studio` | **Demo 3/4 și Pitch slide 8**: buton `OPEN DESKTOP ECG STUDIO` în night idle |
+| **scan_ports.py** | Scan rapid COM1-32 + `list_ports`. | IN: —; OUT: stdout `Detected ...` + `active: [COM3, COM5 BUSY]` | `python scripts/scan_ports.py` | Pre-check hardware înainte de night START |
+| **diagnose_arduino_com.py** | Diagnostic profund COM5: DTR/RTS reset, test 3 baud, 3s listen raw bytes. | IN: `sys.argv[1]` port (default COM5); OUT: log `RX (N bytes): 'ECG:...'` | `python scripts/diagnose_arduino_com.py [COM5]` | Depanare AD8232 dacă `scan_ports` arată BUSY |
+| **inspect_usb_devices.py** | Enumerare Windows PNP via PowerShell `Win32_PnPEntity` filtrat Ports/USB/Arduino/CH340/CP210/FTDI. | IN: PowerShell; OUT: `Found N matching PNP entities:` + PySerial COM list | `python scripts/inspect_usb_devices.py` | Identifică driver lipsă (CH340/CP210) |
+| **test_hardware_connection.py** | Auto-negociator multi-protocol: probează toate porturi × 4 baud, clasifică payload (ECG vs CSI vs Leads Off vs Raw). | IN: live COM; OUT: `{port, baud, protocol, sample_payload}` | `python scripts/test_hardware_connection.py` | **Demo 4**: validează `Hardware — SENSOR ONLINE` înainte de juriu |
+| **test_live_samples.py** | Smoke test 3s pe COM3 @115200 via `SerialEcgReader` callback, numără sample-uri. | IN: COM3 115200; OUT: `Received N samples, avg value` | `python scripts/test_live_samples.py` | Verificare minimă că AD8232 emite |
+| **train_all_pipeline.py** | Master training 4 pași: ESRS 10k + CatBoost (300 trees) + parallel cohorts 50 epochs + THORES 100 epochs. | IN: `src/data/generate_esrs_dataset.py`; OUT: `data/catboost_esrs_dataset.csv`, `foundation_models/catboost_esrs_classifier.cbm + cohort_baselines_12.json + respiratory_foundation_512.pt`, `local_user/alex_runner/model/*` | `python scripts/train_all_pipeline.py` | **Pitch slide 11**: arată `206,318h` + progress bars; generare modele înainte de demo |
+| **train_demo_model.py** | Pre-training ușor: LifeMultimodalTransformer 512D 8 epoci pe 64 ferestre PSG sintetice. | IN: `PsgAudioDatasetHelper`; OUT: `data/checkpoints/life_transformer_best.pt` | `python scripts/train_demo_model.py` | Fallback training rapid dacă `train_all` e prea lung |
+| **evaluate_clinical_test_patients.py** | Benchmark clinic 4 tier: PhysioNet A01-C03 real + 100 phenotipuri + ESRS 2k holdout + THORES 4 SSL losses. | IN: `physionet_data/*_processed.npz` sau `data/*.npz`, `foundation_models/*.pt/.cbm`; OUT: tabel MAE/RMSE/R²/tier acc per patient + console report | `python scripts/evaluate_clinical_test_patients.py` | **Pitch slide 11**: tabel `Patient AHI real vs predicted` pentru juriu |
+| **run_advanced_stress_tests.py** | 20 teste arhitectură (electrode disconnect, RoPE, BERT 40%, InfoNCE, dropout, Soft-F1 gradient, posture, latency p50/p95, storage). | IN: modele live; OUT: 20× `PASS ✅` + metrics loss/grad norm/ms | `python scripts/run_advanced_stress_tests.py` | **Pitch slide 11**: "20/20 PASS" validare robustețe |
+| **fetch_fatn_repo.py** | Downloader FATN repo (zip sau GitHub API) în `firmware/dragosgatan_fatn/`. | IN: `https://github.com/dragosgatan/fatn`; OUT: `firmware/dragosgatan_fatn/repo.zip` extract | `python scripts/fetch_fatn_repo.py` | Opțional — aduce firmware extern FATN |
+| **verify_demos.py** | Verifică 7 demo scenarii distincte (HR/leads/audio) + scoring distinct + fallback leads_off. | IN: `synthetic_generator 7 scenarii`; OUT: `All demo verifications PASSED` | `python scripts/verify_demos.py` | **Demo 1-9**: garantează `healthy vs apnea vs snoring vs leads-off` nu colizează |
+| **init_db.py** | Creează `data/life_signals.db` WAL cu 6 tabele. | IN: `src/storage/database.py`; OUT: `data/life_signals.db` | `python scripts/init_db.py` (apelat de `START_CAMERA_505.bat` & `npm predev`) | Rulat automat la fiecare boot |
+| **init_and_push.py** | Init git + push GitHub (commit all, remote `origin`). | IN: `LOCAL_GIT_USER/EMAIL` env; OUT: `git push` | `python scripts/init_and_push.py` | Deploy — nu apare în demo |
+| **push_now.py / publish_github.py** | Helper push incremental către `github.com/anomalyco/opencode` / `dragosgatan`. | IN: repo git; OUT: push | `python scripts/push_now.py` | — |
+| **menu_trainer.py** | Meniu CLI interactiv (training/eval/demos). | IN: stdin; OUT: subprocese | `python scripts/menu_trainer.py` sau `menu.bat` | Alternativă la `START_CAMERA_505.bat` |
+| **install_cp210x_driver.py / get_cp210x_exe.py** | Descarcă & instalează driver CP210x USB-UART. | IN: `silabs.com` CP210x exe; OUT: driver instalat | `python scripts/install_cp210x_driver.py` | Fix `COM not found` pe laptop juriu |
+| **find_locking_process.py** | Găsește proces care blochează COM (via `handle.exe` / PowerShell). | IN: COM port; OUT: `PID + process name` | `python scripts/find_locking_process.py` | Când `scan_ports` arată `BUSY/LOCKED` |
+| **run_esp32_live.py** | Listener standalone ESP32 WiFi UDP :3333 JSON ECG. | IN: UDP :3333; OUT: stdout `ecg hr` | `python scripts/run_esp32_live.py` | Test ESP32 fără backend |
+| **test_dsp_and_models.py** | Smoke test DSP+modele (Pan-Tompkins, Mel, Transformer forward). | IN: —; OUT: `DSP OK` + embedding shape | `python scripts/test_dsp_and_models.py` | CI smoke înainte de pitch |
 
-## Orchestration / Launch
-
-### `scripts/start_all.py`
-- **Purpose:** Master orchestrator — starts FastAPI backend (`uvicorn src.backend.app:app`) + Life-Mobile frontend (`npm run dev`) and probes Ollama, mirroring `START_CAMERA_505.bat` but in Python.
-- **Inputs/Outputs:** Reads `src/backend/config.py:HOST/PORT`, `life-mobile/package.json` dev script; spawns subprocesses, streams logs.
-- **Key functions:** `main()`, port probes, process supervision.
-- **Deps:** `subprocess`, `requests`, `psutil` (if present).
-- **Demo:** One-command jury startup when `.bat` is not desired.
-- **Run:** `python scripts/start_all.py`
-
-### `scripts/run_server.py`
-- **Purpose:** Minimal backend launcher — starts `uvicorn` on `src.backend.app:app` for devs who don't want frontend auto-start.
-- **Run:** `python scripts/run_server.py` — then `http://localhost:8000/docs`
-
-### `scripts/start_camera505_full.bat`
-- **Purpose:** Windows `.bat` wrapper that calls Python orchestrator / uvicorn with correct venv. Duplicate of `START_CAMERA_505.bat` kept inside scripts for portability.
-- **Run:** `scripts\start_camera505_full.bat`
-
-### `scripts/run_esp32_live.py`
-- **Purpose:** Standalone ESP32 live ingester — opens serial/WiFi ECG stream outside FastAPI, prints telemetry and optionally pushes to `StreamManager` for headless testing.
-- **Key:** Argparse for `--port COM3 --baud 115200 --udp 3333`, loop reading `SerialEcgReader` / `ESP32WiFiECGStream`.
-- **Run:** `python scripts/run_esp32_live.py --port COM3 --baud 115200`
-
-### `scripts/menu_trainer.py`
-- **Purpose:** Interactive TUI menu (used by `menu.bat`) — lets operator pick cohort training, benchmark, or launcher without remembering CLI flags.
-- **Run:** `python scripts/menu_trainer.py`
-
----
-
-## Training
-
-### `scripts/train_all_pipeline.py`
-- **Purpose:** End-to-end training pipeline — generates ESRS dataset → trains CatBoost ESRS → parallel cohort training (Soft-F1) → saves to `foundation_models/` + `checkpoints/`. Central entry called by `TRAIN_ALL_CAMERA_505.bat`.
-- **Inputs:** `data/catboost_esrs_dataset.csv` (or generates via `src/data/generate_esrs_dataset.py`)
-- **Outputs:** `foundation_models/catboost_esrs_classifier.cbm`, `foundation_models/catboost_metrics.json`, `checkpoints/trained_cohorts.json`
-- **Key:** imports `src.training.train_esrs_catboost.train_esrs_catboost_model`, `src.training.parallel_cohort_trainer.run_parallel_cohort_training`
-- **Run:** `python scripts/train_all_pipeline.py`  or  `TRAIN_ALL_CAMERA_505.bat`
-
-### `scripts/train_demo_model.py`
-- **Purpose:** Lightweight demo trainer — trains a tiny foundation model on synthetic windows (few epochs) so `local_user/demo_user/model/` exists before jury.
-- **Run:** `python scripts/train_demo_model.py`
-
----
-
-## Hardware Diagnostics
-
-### `scripts/scan_ports.py`
-- **Purpose:** Lists COM ports via `serial.tools.list_ports.comports()` (same helper as `src/ingestion/serial_stream.py:list_available_com_ports`). Used to confirm AD8232 on COM3 / CSI on COM4.
-- **Run:** `python scripts/scan_ports.py`
-
-### `scripts/inspect_usb_devices.py`
-- **Purpose:** Verbose USB enumeration — device, description, HWID, VID/PID, driver — to debug CP210x / CH340 issues.
-- **Run:** `python scripts/inspect_usb_devices.py`
-
-### `scripts/diagnose_arduino_com.py`
-- **Purpose:** Targeted Arduino/ESP32 check — opens COM port, reads lines, classifies framing (raw ADC vs `ECG:`, JSON, CSV) using same parser `SerialEcgReader._parse_line`.
-- **Run:** `python scripts/diagnose_arduino_com.py --port COM3`
-
-### `scripts/test_hardware_connection.py`
-- **Purpose:** Unified hardware smoke-test — checks `GET /api/com_ports`, `GET /api/wifi/status`, and live `SerialEcgReader` samples; reports ONLINE vs SIMULATOR.
-- **Run:** `python scripts/test_hardware_connection.py`
-
-### `scripts/test_live_samples.py`
-- **Purpose:** Pulls `GET /api/session/current` telemetry snapshot and prints HR/RR/snore/anomaly to console.
-- **Run:** `python scripts/test_live_samples.py`
-
-### `scripts/desktop_ecg_plotter.py`
-- **Purpose:** Tkinter 60 FPS oscilloscope — desktop mirror of `life-mobile/components/EcgOscilloscope.tsx`. Subscribes to `ws://localhost:8000/ws/live` or reads serial directly; same path triggered by `GET /api/launch-ecg-studio`.
-- **Run:** `python scripts/desktop_ecg_plotter.py`  (also `start_ecg_studio.bat`)
-
----
-
-## Verification & Benchmarks
-
-### `scripts/verify_demos.py`
-- **Purpose:** Pre-demo checklist — hits `/api/status`, `/api/com_ports`, `/api/wifi/status`, `/api/ai/status`, `/api/benchmarks/run` and verifies score thresholds.
-- **Run:** `python scripts/verify_demos.py`
-
-### `scripts/test_dsp_and_models.py`
-- **Purpose:** Offline DSP/model unit test — feeds synthetic 30-s ECG through `EcgDspProcessor`, `AudioDspProcessor`, `LifeMultimodalTransformer`, asserts HRV/RoPE/token shapes.
-- **Run:** `python scripts/test_dsp_and_models.py`
-
-### `scripts/evaluate_clinical_test_patients.py`
-- **Purpose:** Cohort accuracy audit — generates synthetic patient profiles → `CatBoostCohortClassifier.predict_cohort()` → confusion matrix vs ground-truth cohort.
-- **Run:** `python scripts/evaluate_clinical_test_patients.py`
-
-### `scripts/run_advanced_stress_tests.py`
-- **Purpose:** Stress suite — rapid scenario switches (apnea/arrhythmia/leads_off), high-rate WebSocket load, DB concurrent writes.
-- **Run:** `python scripts/run_advanced_stress_tests.py`
-
----
-
-## Driver / Installer
-
-### `scripts/install_cp210x_driver.py`
-- **Purpose:** Automates CP210x USB-to-UART driver install (downloads official SiLabs installer, silent `/S`).
-- **Run:** `python scripts/install_cp210x_driver.py`  (admin needed — see `install_driver_admin.bat`)
-
-### `scripts/get_cp210x_exe.py`
-- **Purpose:** Downloader helper — fetches `CP210x_Universal_Windows_Driver.zip` / `OllamaSetup.exe` via `urllib.request.urlretrieve` to `%TEMP%`.
-- **Run:** `python scripts/get_cp210x_exe.py`
-
----
-
-## System Utilities / Git
-
-### `scripts/find_locking_process.py`
-- **Purpose:** Windows helper — finds which process holds `life_signals.db` lock (uses `psutil` / `handle.exe` equivalent) so DB WAL can be cleared.
-- **Run:** `python scripts/find_locking_process.py`
-
-### `scripts/fetch_fatn_repo.py`
-- **Purpose:** Fetcher for external FaTN dataset repo (if configured) — clones/pulls reference datasets for `src/datasets/*`.
-- **Run:** `python scripts/fetch_fatn_repo.py`
-
-### `scripts/push_now.py` / `scripts/publish_github.py` / `scripts/init_and_push.py`
-- **Purpose:** Git helpers — `init_and_push` inits repo + first commit, `push_now` does `git add/commit/push`, `publish_github` uses `gh` CLI / API to create remote repo. Mirrors `push_to_github.bat`.
-- **Run:** `python scripts/push_now.py`  /  `python scripts/publish_github.py`  /  `python scripts/init_and_push.py`
-
-### `scripts/__pycache__/` and `scripts/test_temp.db`
-- **Purpose:** Generated artifacts — not source; ignore. `test_temp.db` is a disposable SQLite file for local DSP tests.
-
----
-
-## Root-level launchers (not in scripts/ but referenced)
-
-- `START_CAMERA_505.bat` / `start.bat` — entry launcher (backend + frontend + Ollama check).
-- `start_ecg_studio.bat` — runs `python scripts/desktop_ecg_plotter.py` in new console.
-- `TRAIN_ALL_CAMERA_505.bat` / `train_all.bat` — wrapper around `python scripts/train_all_pipeline.py`.
-- `install_driver.bat` / `install_driver_admin.bat` — wrapper around `scripts/install_cp210x_driver.py` with elevation.
+> Notă: `scripts/test_temp.db` e artefact temporar SQLite, nu script.

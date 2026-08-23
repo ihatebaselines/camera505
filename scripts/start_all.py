@@ -16,6 +16,9 @@ import webbrowser
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE, "life-mobile")
+# Ensure project root is importable regardless of CWD when launched via .bat
+if BASE not in sys.path:
+    sys.path.insert(0, BASE)
 
 BANNER = r"""
 ==============================================================================

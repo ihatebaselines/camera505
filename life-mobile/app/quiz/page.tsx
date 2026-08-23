@@ -28,7 +28,7 @@ interface CohortResult {
 }
 
 function classifyToCohort(answers: QuizAnswers): CohortResult {
-  const { age, gender, bmi, snore, fatigue, choking, hypertension } = answers;
+  const { age, gender, bmi, snore, fatigue, choking, hypertension, smartwatch } = answers;
 
   if (bmi === 'obese' && (snore >= 2 || choking)) {
     return {
@@ -302,9 +302,9 @@ export default function QuizPage() {
       <div className="min-h-screen bg-[#000000] text-[#FFFFFF] flex flex-col items-center justify-center p-4 sm:p-6 font-mono antialiased">
         <div className="w-full max-w-2xl bg-[#111111] border border-[#222222] rounded-[4px] p-6 sm:p-8 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-[#222222]">
-            <div className="w-3 h-3 rounded-[2px] bg-[#FF3B30] border border-[#FF3B30]" />
-            <div className="w-3 h-3 rounded-[2px] bg-[#FFCC00] border border-[#FFCC00]" />
-            <div className="w-3 h-3 rounded-[2px] bg-[#00C853] border border-[#00C853]" />
+            <div className="w-3 h-3 rounded-[2px] bg-[#FF3333] border border-[#FF3333]" />
+            <div className="w-3 h-3 rounded-[2px] bg-[#FFB800] border border-[#FFB800]" />
+            <div className="w-3 h-3 rounded-[2px] bg-[#0E9F00] border border-[#0E9F00]" />
             <span className="ml-3 text-[10px] font-black text-[#666666] uppercase tracking-[0.14em] font-mono">
               CAMERA 505 — CATBOOST COHORT CALIBRATION ENGINE
             </span>
@@ -314,7 +314,7 @@ export default function QuizPage() {
             {terminalLines.map((line, idx) => {
               let color = '#888888';
               if (line.includes('[✓]')) color = '#0080FF';
-              else if (line.includes('RISK')) color = '#FFCC00';
+              else if (line.includes('RISK')) color = '#FFB800';
               else if (line.includes('Matched Clinical Model')) color = '#0080FF';
 
               return (
@@ -358,7 +358,7 @@ export default function QuizPage() {
           <div className="flex items-center justify-between">
             <button
               onClick={() => (step > 0 ? setStep(step - 1) : router.back())}
-              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.12em] font-mono text-[#888888] hover:text-[#FFFFFF] bg-[#111111] border border-[#222222] rounded-[2px] px-3.5 py-2 hover:border-[#333333] hover:bg-[#161616] cursor-pointer transition-colors"
+              className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.12em] font-mono text-[#888888] hover:text-[#FFFFFF] bg-[#111111] border border-[#222222] rounded-[2px] px-3.5 py-2 hover:border-[#333333] hover:bg-[#1A1A1A] cursor-pointer transition-colors"
             >
               <IconChevronLeft size={16} />
               BACK
@@ -404,7 +404,7 @@ export default function QuizPage() {
                   className={`w-full text-left p-4 sm:p-5 rounded-[2px] border transition-colors flex items-center justify-between gap-4 cursor-pointer font-mono ${
                     isSelected
                       ? 'bg-[#0080FF] border-[#0080FF] text-[#FFFFFF]'
-                      : 'bg-[#111111] border-[#222222] text-[#FFFFFF] hover:bg-[#161616] hover:border-[#333333]'
+                      : 'bg-[#111111] border-[#222222] text-[#FFFFFF] hover:bg-[#1A1A1A] hover:border-[#333333]'
                   }`}
                 >
                   <span className={`text-[13px] leading-snug font-mono ${isSelected ? 'font-black' : 'font-medium'} `}>{opt.label}</span>
