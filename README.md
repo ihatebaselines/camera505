@@ -69,25 +69,25 @@ Built for the *"Signals That Can Change The World"* hackathon.
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                        CAMERA 505 PLATFORM                              │
 │                                                                         │
-│  ┌─────────────┐     Serial/UDP      ┌──────────────────────────────┐  │
-│  │ AD8232 ECG  │────────COM3────────▶│                              │  │
-│  │ (hardware)  │                     │   FastAPI Backend            │  │
-│  └─────────────┘                     │   src/backend/app.py :8000   │  │
-│                                      │                              │  │
-│  ┌─────────────┐    UDP :3333        │   StreamManager              │  │
-│  │ ESP32 ECG   │────────WiFi────────▶│   ├─ EcgDspProcessor         │  │
-│  │ (wireless)  │                     │   ├─ AudioDspProcessor       │  │
-│  └─────────────┘                     │   ├─ Transformer 512-D       │  │
-│                                      │   ├─ CatBoost Classifier     │  │
-│  ┌─────────────┐  ESP-NOW RF beams   │   └─ Ollama Report Gen       │  │
-│  │ ESP32 TX    │─────────────────┐   │              │ WebSocket     │  │
-│  │ (Beacon)    │                 │   └──────────────┬───────────────┘  │
-│  └─────────────┘                 │                  │ /ws/live        │
-│                                  │   ┌─────────────▼───────────────┐  │
-│  ┌─────────────┐    CSI Serial   │   │   Next.js Frontend           │  │
-│  │ ESP32 RX    │◀────────────────┘   │   life-mobile/ :6767         │  │
-│  │ (CSI Radar) │──────COM4──────────▶│   + Tk Desktop Plotter       │  │
-│  └─────────────┘   921600 baud       └─────────────────────────────┘  │
+│  ┌─────────────┐     Serial/UDP      ┌──────────────────────────────┐   │
+│  │ AD8232 ECG  │────────COM3────────>│                              │   │
+│  │ (hardware)  │                     │   FastAPI Backend            │   │
+│  └─────────────┘                     │   src/backend/app.py :8000   │   │
+│                                      │                              │   │
+│  ┌─────────────┐    UDP :3333        │   StreamManager              │   │
+│  │ ESP32 ECG   │────────WiFi────────>│   ├─ EcgDspProcessor         │   │
+│  │ (wireless)  │                     │   ├─ AudioDspProcessor       │   │
+│  └─────────────┘                     │   ├─ Transformer 512-D       │   │
+│                                      │   ├─ CatBoost Classifier     │   │
+│  ┌─────────────┐  ESP-NOW RF beams   │   └─ Ollama Report Gen       │   │
+│  │ ESP32 TX    │─────────────────┐   │              │ WebSocket     │   │
+│  │ (Beacon)    │                 │   └──────────────┬───────────────┘   │
+│  └─────────────┘                 │                  │ /ws/live          │
+│                                  │   ┌──────────────▼────────────┐      │
+│  ┌─────────────┐    CSI Serial   │   │   Next.js Frontend        │      │
+│  │ ESP32 RX    │ <───────────────┘   │   life-mobile/ :6767      │      │
+│  │ (CSI Radar) │──────COM4─────────> │   + Tk Desktop Plotter    │      │
+│  └─────────────┘   921600 baud       └───────────────────────────┘      │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
