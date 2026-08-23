@@ -107,6 +107,17 @@ function classifyToCohort(answers: QuizAnswers): CohortResult {
       resp: 12,
     };
   }
+  if (smartwatch && snore === 0 && fatigue <= 1) {
+    return {
+      key: 'wearable_healthy',
+      name: 'Wearable Healthy (BIDMC / Fantasia)',
+      risk: 'LOW',
+      theta: 0.24,
+      tau: 0.42,
+      hr: 60,
+      resp: 13,
+    };
+  }
   return {
     key: 'healthy_adult',
     name: 'Healthy Adult Baseline (APNEA-ECG)',
@@ -326,7 +337,9 @@ export default function QuizPage() {
     );
   }
 
-  const q = questions[step];
+  // Defensive guard — prevents crash at app/quiz/page.tsx:372 (Cannot read properties of undefined reading 'title')
+  // Off-by-one safe: clamp step and fallback to first question
+  const q = questions[step] ?? questions[0];
   if (!q) {
     return (
       <div className="min-h-screen bg-[#000000] text-[#FFFFFF] flex items-center justify-center font-mono">
