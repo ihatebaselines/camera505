@@ -1,4 +1,7 @@
 @echo off
+cd /d "%~dp0"
+python scripts\init_db.py
+if %errorlevel% neq 0 exit /b %errorlevel%
 title CAMERA 505 - ECG Studio + Web Dashboard
 echo.
 echo =========================================

@@ -17,6 +17,7 @@ venv/
 data/life_signals.db
 data/life_signals.db-shm
 data/life_signals.db-wal
+*.db
 *.db-shm
 *.db-wal
 # keep small baselines, but ignore large runtime artifacts

@@ -2,6 +2,8 @@
 title CAMERA 505 - INTERACTIVE TRAINING & BASELINE MENU
 color 0B
 cd /d "%~dp0"
+python scripts\init_db.py
+if %errorlevel% neq 0 exit /b %errorlevel%
 
 where python >nul 2>nul
 if %errorlevel% neq 0 (
